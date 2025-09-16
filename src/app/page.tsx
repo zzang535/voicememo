@@ -17,11 +17,11 @@ export default function Home() {
       setPermissionGranted(true);
       setError('');
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setPermissionGranted(false);
-      if (err.name === 'NotAllowedError') {
-        setError('Microphone permission denied. Please click the 🔒 icon in your browser\'s address bar and allow microphone access.');
-      } else if (err.name === 'NotFoundError') {
+      if (err instanceof Error && err.name === 'NotAllowedError') {
+        setError('Microphone permission denied. Please click the 🔒 icon in your browser&apos;s address bar and allow microphone access.');
+      } else if (err instanceof Error && err.name === 'NotFoundError') {
         setError('No microphone found. Please connect a microphone and try again.');
       } else {
         setError('Unable to access microphone. Please check your browser settings.');
@@ -138,7 +138,7 @@ export default function Home() {
           setPermissionGranted(false);
           setError('Microphone access is blocked. Please enable microphone permission in your browser settings.');
         }
-      } catch (error) {
+      } catch {
         // Permissions API not supported, will check when user clicks record
       }
     };
@@ -173,8 +173,8 @@ export default function Home() {
                       <div className="text-xs text-red-600">
                         <p className="mb-1">To enable microphone access:</p>
                         <ul className="list-disc list-inside space-y-1">
-                          <li>Click the 🔒 or camera icon in your browser's address bar</li>
-                          <li>Select "Allow" for microphone access</li>
+                          <li>Click the 🔒 or camera icon in your browser&apos;s address bar</li>
+                          <li>Select &quot;Allow&quot; for microphone access</li>
                           <li>Refresh the page if needed</li>
                         </ul>
                       </div>
