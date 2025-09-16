@@ -51,7 +51,7 @@ export default function Home() {
 
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = 'ko-KR';
 
     recognition.onstart = () => {
       setIsRecording(true);
@@ -150,6 +150,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
+          <div className="text-xs text-gray-400 mb-2">v0.1.0</div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Voice Memo</h1>
           <p className="text-gray-600">
             {permissionGranted === false
