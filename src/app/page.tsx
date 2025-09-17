@@ -151,8 +151,8 @@ export default function Home() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="text-xs text-gray-400 mb-2">
-            v0.5.0
-            <div className="text-xs text-gray-500 mt-1">Added SSH terminal with remote server connectivity</div>
+            v0.6.0
+            <div className="text-xs text-gray-500 mt-1">Fixed TypeScript/ESLint build errors for production deployment</div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Voice Memo</h1>
           <p className="text-gray-600">

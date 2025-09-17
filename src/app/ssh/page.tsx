@@ -87,7 +87,7 @@ export default function SSHPage() {
         fitAddon.current.fit();
 
         // Handle terminal input
-        terminal.current.onKey(({ key, domEvent }) => {
+        terminal.current.onKey(({ key }) => {
           if (isConnected && websocket.current) {
             // Send input to SSH server via WebSocket
             websocket.current.send(JSON.stringify({
@@ -110,16 +110,16 @@ export default function SSHPage() {
         };
 
         window.addEventListener('resize', handleResize);
-        (window as any).__sshTerminalResizeHandler = handleResize;
+        (window as unknown as Record<string, unknown>).__sshTerminalResizeHandler = handleResize;
       };
 
       initTerminal();
 
       return () => {
-        const handler = (window as any).__sshTerminalResizeHandler;
+        const handler = (window as unknown as Record<string, unknown>).__sshTerminalResizeHandler;
         if (handler) {
-          window.removeEventListener('resize', handler);
-          delete (window as any).__sshTerminalResizeHandler;
+          window.removeEventListener('resize', handler as EventListener);
+          delete (window as unknown as Record<string, unknown>).__sshTerminalResizeHandler;
         }
         if (websocket.current) {
           websocket.current.close();
@@ -205,7 +205,7 @@ export default function SSHPage() {
         websocket.current = null;
       };
 
-    } catch (error) {
+    } catch {
       setConnectionError('Failed to establish connection');
       setIsConnecting(false);
     }
