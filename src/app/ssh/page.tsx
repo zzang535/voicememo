@@ -376,9 +376,9 @@ export default function SSHPage() {
   const stopRecording = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
+      // Send transcribed text to terminal when recording stops
       if (transcription.trim() && terminal.current && isConnectedRef.current) {
-        // Send the transcribed text as terminal input with Enter key
-        const command = transcription.trim() + '\r';
+        const command = transcription.trim();
         if (websocket.current) {
           const message = {
             type: 'command',
@@ -386,14 +386,34 @@ export default function SSHPage() {
           };
           try {
             websocket.current.send(JSON.stringify(message));
-            console.log('Voice command sent with auto-execute:', transcription.trim());
+            console.log('Voice command sent to terminal:', command);
           } catch (error) {
             console.error('Failed to send voice command:', error);
             setVoiceError('Failed to send voice command to terminal');
           }
         }
-        setTranscription('');
       }
+    }
+  };
+
+  const executeVoiceCommand = () => {
+    if (transcription.trim() && terminal.current && isConnectedRef.current) {
+      // Send Enter key to execute the command
+      const command = '\r';
+      if (websocket.current) {
+        const message = {
+          type: 'command',
+          command: command
+        };
+        try {
+          websocket.current.send(JSON.stringify(message));
+          console.log('Enter key sent to execute command');
+        } catch (error) {
+          console.error('Failed to send Enter key:', error);
+          setVoiceError('Failed to execute command');
+        }
+      }
+      setTranscription('');
     }
   };
 
@@ -761,8 +781,19 @@ export default function SSHPage() {
               {transcription && (
                 <div className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
                   <div className="text-gray-300 text-sm mb-1">Voice Input:</div>
-                  <div className="text-white font-mono text-sm break-words">
+                  <div className="text-white font-mono text-sm break-words mb-3">
                     {transcription}
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={executeVoiceCommand}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Execute (Enter)
+                    </button>
                   </div>
                 </div>
               )}
