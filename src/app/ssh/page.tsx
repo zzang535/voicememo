@@ -100,12 +100,20 @@ export default function SSHPage() {
             break;
 
           case 'error':
-            console.log('SSH connection error:', response.error);
-            setConnectionError(response.error || 'Connection failed');
-            setIsConnecting(false);
-            setIsConnected(false);
-            isConnectedRef.current = false;
-            safeWriteToTerminal(`❌ Error: ${response.error}`);
+            console.log('SSH error:', response.error);
+
+            // Don't disconnect for input-related errors, only for connection errors
+            if (response.error && response.error.includes('Unknown message type')) {
+              console.warn('Input message format error, but keeping connection alive');
+              safeWriteToTerminal(`⚠️ Input error: ${response.error}`);
+            } else {
+              // Actual connection error - disconnect
+              setConnectionError(response.error || 'Connection failed');
+              setIsConnecting(false);
+              setIsConnected(false);
+              isConnectedRef.current = false;
+              safeWriteToTerminal(`❌ Connection Error: ${response.error}`);
+            }
             break;
 
           case 'disconnected':
@@ -357,24 +365,22 @@ export default function SSHPage() {
             websocketReadyState: websocket.current?.readyState
           });
 
-          if (isConnectedRef.current && websocket.current && currentSessionId.current) {
+          if (isConnectedRef.current && websocket.current) {
             const message = {
-              type: 'input',
-              sessionId: currentSessionId.current,
-              data: data
+              type: 'command',
+              command: data
             };
-            console.log('Sending input message:', message);
+            console.log('Sending command message:', message);
             try {
               websocket.current.send(JSON.stringify(message));
-              console.log('Input message sent successfully');
+              console.log('Command message sent successfully');
             } catch (error) {
-              console.error('Failed to send input message:', error);
+              console.error('Failed to send command message:', error);
             }
           } else {
             console.warn('Cannot send input - missing requirements:', {
               isConnected: isConnectedRef.current,
-              hasWebSocket: !!websocket.current,
-              sessionId: currentSessionId.current
+              hasWebSocket: !!websocket.current
             });
           }
         });
