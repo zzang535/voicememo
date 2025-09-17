@@ -1,20 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function Navigation() {
-  const [isOpen, setIsOpen] = useState(false);
+interface NavigationProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Navigation({ isOpen, onClose }: NavigationProps) {
   const pathname = usePathname();
-
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeMenu = () => {
-    setIsOpen(false);
-  };
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -22,35 +17,12 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Hamburger Button */}
-      <button
-        onClick={toggleMenu}
-        className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-      >
-        <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-          <div
-            className={`h-0.5 bg-gray-600 transition-all duration-300 ${
-              isOpen ? 'rotate-45 translate-y-1.5' : ''
-            }`}
-          />
-          <div
-            className={`h-0.5 bg-gray-600 transition-all duration-300 ${
-              isOpen ? 'opacity-0' : ''
-            }`}
-          />
-          <div
-            className={`h-0.5 bg-gray-600 transition-all duration-300 ${
-              isOpen ? '-rotate-45 -translate-y-1.5' : ''
-            }`}
-          />
-        </div>
-      </button>
 
       {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={closeMenu}
+          onClick={onClose}
         />
       )}
 
@@ -67,32 +39,8 @@ export default function Navigation() {
 
           <nav className="space-y-4">
             <Link
-              href="/"
-              onClick={closeMenu}
-              className={`block px-4 py-3 rounded-lg transition-colors ${
-                isActive('/')
-                  ? 'bg-blue-100 text-blue-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              🎙️ Voice Memo
-            </Link>
-
-            <Link
-              href="/terminal"
-              onClick={closeMenu}
-              className={`block px-4 py-3 rounded-lg transition-colors ${
-                isActive('/terminal')
-                  ? 'bg-blue-100 text-blue-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              💻 Terminal
-            </Link>
-
-            <Link
               href="/ssh"
-              onClick={closeMenu}
+              onClick={onClose}
               className={`block px-4 py-3 rounded-lg transition-colors ${
                 isActive('/ssh')
                   ? 'bg-blue-100 text-blue-700 font-semibold'

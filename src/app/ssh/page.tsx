@@ -4,7 +4,15 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { Terminal } from 'xterm';
 import type { FitAddon } from '@xterm/addon-fit';
 import { useStableWebSocket } from '@/hooks/useStableWebSocket';
+import Header from '@/components/Header';
 import 'xterm/css/xterm.css';
+
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
 
 interface SSHConfig {
   host: string;
@@ -20,11 +28,18 @@ export default function SSHPage() {
   const terminalReady = useRef<boolean>(false);
   const pendingMessages = useRef<string[]>([]);
   const currentSessionId = useRef<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [showConnectionForm, setShowConnectionForm] = useState(true);
+
+  // Voice recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcription, setTranscription] = useState('');
+  const [voiceError, setVoiceError] = useState('');
+  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
 
   // Use refs to avoid closure issues in event handlers
   const isConnectedRef = useRef(false);
@@ -261,6 +276,127 @@ export default function SSHPage() {
     safeWriteToTerminal('Fill in the connection form above to get started.');
   };
 
+  // Voice recording functions
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setPermissionGranted(true);
+      setVoiceError('');
+      return true;
+    } catch (err: unknown) {
+      setPermissionGranted(false);
+      if (err instanceof Error && err.name === 'NotAllowedError') {
+        setVoiceError('Microphone permission denied. Please allow microphone access.');
+      } else if (err instanceof Error && err.name === 'NotFoundError') {
+        setVoiceError('No microphone found. Please connect a microphone and try again.');
+      } else {
+        setVoiceError('Unable to access microphone. Please check your browser settings.');
+      }
+      return false;
+    }
+  };
+
+  const startRecording = async () => {
+    setVoiceError('');
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      setVoiceError('Speech recognition not supported in this browser. Use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (permissionGranted === null) {
+      const granted = await requestMicrophonePermission();
+      if (!granted) return;
+    } else if (permissionGranted === false) {
+      const granted = await requestMicrophonePermission();
+      if (!granted) return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'ko-KR';
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setTranscription('');
+      setVoiceError('');
+    };
+
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      setTranscription(finalTranscript + interimTranscript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(false);
+
+      switch (event.error) {
+        case 'not-allowed':
+          setVoiceError('Microphone access denied. Please allow microphone permission.');
+          setPermissionGranted(false);
+          break;
+        case 'no-speech':
+          setVoiceError('No speech detected. Please try speaking again.');
+          break;
+        case 'audio-capture':
+          setVoiceError('Microphone not available. Please check your microphone.');
+          break;
+        case 'network':
+          setVoiceError('Network error. Please check your internet connection.');
+          break;
+        default:
+          setVoiceError(`Speech recognition error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      if (transcription.trim() && terminal.current && isConnectedRef.current) {
+        // Send the transcribed text as terminal input
+        const command = transcription.trim();
+        if (websocket.current) {
+          const message = {
+            type: 'command',
+            command: command
+          };
+          try {
+            websocket.current.send(JSON.stringify(message));
+            console.log('Voice command sent:', command);
+          } catch (error) {
+            console.error('Failed to send voice command:', error);
+            setVoiceError('Failed to send voice command to terminal');
+          }
+        }
+        setTranscription('');
+      }
+    }
+  };
+
   // Initialize terminal
   useEffect(() => {
     console.log('Terminal initialization effect triggered', {
@@ -300,12 +436,12 @@ export default function SSHPage() {
             brightCyan: '#22d3ee',
             brightWhite: '#ffffff',
           },
-          fontSize: 14,
+          fontSize: 12,
           fontFamily: '"Fira Code", "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", Menlo, "Ubuntu Mono", monospace',
           cursorBlink: true,
           convertEol: true,
           allowProposedApi: true,
-          scrollback: 1000,
+          scrollback: 10000,
           cols: 80,
           rows: 24,
         });
@@ -474,133 +610,124 @@ export default function SSHPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-2 sm:p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <Header
+        title="SSH Terminal"
+        subtitle={isConnected ? `${sshConfig.username}@${sshConfig.host}:${sshConfig.port}` : undefined}
+        showDisconnect={isConnected}
+        onDisconnect={disconnectSSH}
+      />
 
-        {/* Connection Form */}
-        {showConnectionForm && (
-          <div className="bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 mb-4 border border-gray-700">
-            <h2 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-blue-400">🔐</span>
-              SSH Connection
-            </h2>
+      {/* Main content with top padding to account for fixed header */}
+      <div className="pt-[80px] p-2 sm:p-4">
+        <div className="max-w-7xl mx-auto">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Host *
-                </label>
-                <input
-                  type="text"
-                  value={sshConfig.host}
-                  onChange={(e) => setSSHConfig({ ...sshConfig, host: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="192.168.1.100"
-                />
+          {/* Connection Form */}
+          {showConnectionForm && (
+            <div className="bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 mb-4 border border-gray-700">
+              <h2 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
+                <span className="text-blue-400">🔐</span>
+                SSH Connection
+              </h2>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!isConnecting) {
+                connectToSSH();
+              }
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Host *
+                  </label>
+                  <input
+                    type="text"
+                    value={sshConfig.host}
+                    onChange={(e) => setSSHConfig({ ...sshConfig, host: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="192.168.1.100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Port
+                  </label>
+                  <input
+                    type="number"
+                    value={sshConfig.port}
+                    onChange={(e) => setSSHConfig({ ...sshConfig, port: parseInt(e.target.value) || 22 })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="22"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Username *
+                  </label>
+                  <input
+                    type="text"
+                    value={sshConfig.username}
+                    onChange={(e) => setSSHConfig({ ...sshConfig, username: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="username"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    value={sshConfig.password}
+                    onChange={(e) => setSSHConfig({ ...sshConfig, password: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="password"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Port
-                </label>
-                <input
-                  type="number"
-                  value={sshConfig.port}
-                  onChange={(e) => setSSHConfig({ ...sshConfig, port: parseInt(e.target.value) || 22 })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="22"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Username *
-                </label>
-                <input
-                  type="text"
-                  value={sshConfig.username}
-                  onChange={(e) => setSSHConfig({ ...sshConfig, username: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="username"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Password *
-                </label>
-                <input
-                  type="password"
-                  value={sshConfig.password}
-                  onChange={(e) => setSSHConfig({ ...sshConfig, password: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="password"
-                />
-              </div>
-            </div>
-
-            {connectionError && (
-              <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-md">
-                <p className="text-red-300 text-sm">{connectionError}</p>
-              </div>
-            )}
-
-            <button
-              onClick={connectToSSH}
-              disabled={isConnecting}
-              className="w-full md:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors flex items-center justify-center gap-2"
-            >
-              {isConnecting ? (
-                <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  🚀 Connect
-                </>
+              {connectionError && (
+                <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-md">
+                  <p className="text-red-300 text-sm">{connectionError}</p>
+                </div>
               )}
-            </button>
-          </div>
-        )}
 
-        {/* Connected Status */}
-        {isConnected && (
-          <div className="bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 mb-4 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-white font-medium">
-                  Connected to {sshConfig.username}@{sshConfig.host}:{sshConfig.port}
-                </span>
-              </div>
               <button
-                onClick={disconnectSSH}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors"
+                type="submit"
+                disabled={isConnecting}
+                className="w-full md:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors flex items-center justify-center gap-2"
               >
-                Disconnect
+                {isConnecting ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    🚀 Connect
+                  </>
+                )}
               </button>
-            </div>
+            </form>
           </div>
         )}
 
-        {/* Terminal */}
-        <div className="bg-black/95 backdrop-blur-sm rounded-lg border border-gray-700 shadow-2xl overflow-hidden">
-          <div className="bg-gray-800/50 px-4 py-2 border-b border-gray-700">
-            <div className="flex items-center gap-2 text-gray-400 text-sm">
-              <span>SSH Terminal</span>
-              {isConnected && (
-                <>
-                  <span className="text-gray-600">•</span>
-                  <span className="font-mono">{sshConfig.username}@{sshConfig.host}</span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="p-4">
+        {/* Terminal - Always render but control visibility */}
+        <div className={`bg-black/95 backdrop-blur-sm rounded-lg border border-gray-700 shadow-2xl transition-opacity duration-300 ${
+          isConnected ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{
+          height: isConnected ? 'calc(100vh - 340px)' : 'calc(100vh - 320px)',
+          minHeight: '300px'
+        }}>
+          <div className="h-full p-4">
             <div
               ref={terminalRef}
-              className="w-full outline-none"
+              className="w-full h-full outline-none"
               onClick={() => {
                 console.log('Terminal container clicked, focusing...');
                 if (terminal.current) {
@@ -614,19 +741,83 @@ export default function SSHPage() {
                 }
               }}
               tabIndex={0}
-              style={{
-                height: 'calc(100vh - 350px)',
-                minHeight: '400px',
-                maxHeight: '600px'
-              }}
             />
           </div>
         </div>
 
+        {/* Voice Recording Interface - Only show when connected */}
+        {isConnected && (
+          <div className="mt-4 bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
+            <div className="flex flex-col space-y-3">
+              {/* Voice Recording Status */}
+              {isRecording && (
+                <div className="flex items-center justify-center gap-2 py-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-white text-sm font-medium">Recording... Speak your command</span>
+                </div>
+              )}
+
+              {/* Transcription Display */}
+              {transcription && (
+                <div className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
+                  <div className="text-gray-300 text-sm mb-1">Voice Input:</div>
+                  <div className="text-white font-mono text-sm break-words">
+                    {transcription}
+                  </div>
+                </div>
+              )}
+
+              {/* Voice Error Display */}
+              {voiceError && (
+                <div className="bg-red-900/50 border border-red-500 rounded-lg p-3">
+                  <p className="text-red-300 text-sm">{voiceError}</p>
+                </div>
+              )}
+
+              {/* Record Button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+                    isRecording
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {isRecording ? (
+                    <>
+                      <div className="w-4 h-4 bg-white rounded-sm"></div>
+                      Stop Recording
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                      </svg>
+                      Voice Command
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="text-center">
+                <p className="text-gray-400 text-xs">
+                  Tap the microphone to speak terminal commands in Korean
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 text-center">
+          <div className="text-xs text-gray-400 mb-2">
+            v0.8.0
+            <div className="text-xs text-gray-500 mt-1">Enhanced terminal UI with unified header, form validation, and improved terminal scrolling</div>
+          </div>
           <p className="text-gray-500 text-xs">
             SSH Terminal • Secure remote access • Built with xterm.js & WebSocket
           </p>
+        </div>
         </div>
       </div>
     </div>
