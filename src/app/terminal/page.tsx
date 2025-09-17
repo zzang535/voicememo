@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Terminal } from 'xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { WebLinksAddon } from '@xterm/addon-web-links';
+import type { Terminal } from 'xterm';
+import type { FitAddon } from '@xterm/addon-fit';
 import 'xterm/css/xterm.css';
 
 export default function TerminalPage() {
@@ -15,49 +14,58 @@ export default function TerminalPage() {
 
   useEffect(() => {
     if (terminalRef.current && !terminal.current) {
-      // Create terminal instance
-      terminal.current = new Terminal({
-        theme: {
-          background: 'rgba(0, 0, 0, 0.95)',
-          foreground: '#e5e7eb',
-          cursor: '#10b981',
-          cursorAccent: '#065f46',
-          selection: 'rgba(59, 130, 246, 0.3)',
-          black: '#000000',
-          red: '#ef4444',
-          green: '#10b981',
-          yellow: '#f59e0b',
-          blue: '#3b82f6',
-          magenta: '#a855f7',
-          cyan: '#06b6d4',
-          white: '#f3f4f6',
-          brightBlack: '#6b7280',
-          brightRed: '#f87171',
-          brightGreen: '#34d399',
-          brightYellow: '#fbbf24',
-          brightBlue: '#60a5fa',
-          brightMagenta: '#c084fc',
-          brightCyan: '#22d3ee',
-          brightWhite: '#ffffff',
-        },
-        fontSize: 14,
-        fontFamily: '"Fira Code", "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", Menlo, "Ubuntu Mono", monospace',
-        cursorBlink: true,
-        convertEol: true,
-        allowProposedApi: true,
-        scrollback: 1000,
-      });
+      const initTerminal = async () => {
+        // Dynamically import xterm modules
+        const { Terminal } = await import('xterm');
+        const { FitAddon } = await import('@xterm/addon-fit');
+        const { WebLinksAddon } = await import('@xterm/addon-web-links');
 
-      // Create addons
-      fitAddon.current = new FitAddon();
-      const webLinksAddon = new WebLinksAddon();
+        // Initialize addons
+        fitAddon.current = new FitAddon();
+
+        // Create terminal instance
+        terminal.current = new Terminal({
+          theme: {
+            background: 'rgba(0, 0, 0, 0.95)',
+            foreground: '#e5e7eb',
+            cursor: '#10b981',
+            cursorAccent: '#065f46',
+            black: '#000000',
+            red: '#ef4444',
+            green: '#10b981',
+            yellow: '#f59e0b',
+            blue: '#3b82f6',
+            magenta: '#a855f7',
+            cyan: '#06b6d4',
+            white: '#f3f4f6',
+            brightBlack: '#6b7280',
+            brightRed: '#f87171',
+            brightGreen: '#34d399',
+            brightYellow: '#fbbf24',
+            brightBlue: '#60a5fa',
+            brightMagenta: '#c084fc',
+            brightCyan: '#22d3ee',
+            brightWhite: '#ffffff',
+          },
+          fontSize: 14,
+          fontFamily: '"Fira Code", "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", Menlo, "Ubuntu Mono", monospace',
+          cursorBlink: true,
+          convertEol: true,
+          allowProposedApi: true,
+          scrollback: 1000,
+        });
+
+        // Create web links addon
+        const webLinksAddon = new WebLinksAddon();
 
       // Load addons
       terminal.current.loadAddon(fitAddon.current);
       terminal.current.loadAddon(webLinksAddon);
 
       // Open terminal
-      terminal.current.open(terminalRef.current);
+      if (terminalRef.current) {
+        terminal.current.open(terminalRef.current);
+      }
 
       // Welcome message
       terminal.current.writeln('Welcome to Voice Memo Terminal!');
@@ -82,7 +90,7 @@ export default function TerminalPage() {
 
       // Command handling
       let currentLine = '';
-      let commandHistory: string[] = [];
+      const commandHistory: string[] = [];
       let historyIndex = -1;
 
       const executeCommand = async (command: string) => {
@@ -290,19 +298,29 @@ export default function TerminalPage() {
         }
       });
 
-      // Handle resize
-      const handleResize = () => {
-        fitAddon.current?.fit();
+        // Handle resize
+        const handleResize = () => {
+          fitAddon.current?.fit();
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        // Store the handler for cleanup
+        (window as unknown as { __terminalResizeHandler?: () => void }).__terminalResizeHandler = handleResize;
       };
 
-      window.addEventListener('resize', handleResize);
+      initTerminal();
 
       return () => {
-        window.removeEventListener('resize', handleResize);
+        const handler = (window as unknown as { __terminalResizeHandler?: () => void }).__terminalResizeHandler;
+        if (handler) {
+          window.removeEventListener('resize', handler);
+          delete (window as unknown as { __terminalResizeHandler?: () => void }).__terminalResizeHandler;
+        }
         terminal.current?.dispose();
       };
     }
-  }, []);
+  }, [currentPath, isExecuting]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-2 sm:p-4">
@@ -331,7 +349,7 @@ export default function TerminalPage() {
             Current directory: <span className="text-blue-400 font-mono">{currentPath}</span>
           </p>
           <p className="text-gray-400 text-xs mt-1">
-            Type "help" for available commands. Use Ctrl+C to cancel current input.
+            Type &quot;help&quot; for available commands. Use Ctrl+C to cancel current input.
           </p>
         </div>
 

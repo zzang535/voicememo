@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       const child = spawn('sh', ['-c', cleanCommand], {
         stdio: 'pipe',
         env: {
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         }
       }, 30000);
     });
-  } catch (error) {
+  } catch {
     return Response.json({
       error: 'Failed to parse request or execute command',
       exitCode: 1,
