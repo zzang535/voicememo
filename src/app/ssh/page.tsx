@@ -26,6 +26,9 @@ export default function SSHPage() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [showConnectionForm, setShowConnectionForm] = useState(true);
 
+  // Use refs to avoid closure issues in event handlers
+  const isConnectedRef = useRef(false);
+
   const [sshConfig, setSSHConfig] = useState<SSHConfig>({
     host: '192.168.0.7',
     port: 22,
@@ -54,6 +57,7 @@ export default function SSHPage() {
             }
 
             setIsConnected(true);
+            isConnectedRef.current = true;
             setIsConnecting(false);
             setShowConnectionForm(false);
             addConnectionMessage(true);
@@ -100,12 +104,14 @@ export default function SSHPage() {
             setConnectionError(response.error || 'Connection failed');
             setIsConnecting(false);
             setIsConnected(false);
+            isConnectedRef.current = false;
             safeWriteToTerminal(`❌ Error: ${response.error}`);
             break;
 
           case 'disconnected':
             console.log('SSH connection disconnected');
             setIsConnected(false);
+            isConnectedRef.current = false;
             setShowConnectionForm(true);
             safeWriteToTerminal('');
             safeWriteToTerminal('📡 SSH connection closed');
@@ -123,6 +129,7 @@ export default function SSHPage() {
     onClose: (event: CloseEvent) => {
       console.warn('SSH WebSocket closed:', event);
       setIsConnected(false);
+      isConnectedRef.current = false;
       setShowConnectionForm(true);
     },
 
@@ -234,6 +241,7 @@ export default function SSHPage() {
     }
     closeWithTrace(1000, "user-disconnect");
     setIsConnected(false);
+    isConnectedRef.current = false;
     setShowConnectionForm(true);
     currentSessionId.current = null;
 
@@ -342,14 +350,32 @@ export default function SSHPage() {
         // Handle terminal input - use onData which handles all input including IME
         terminal.current.onData((data) => {
           console.log('Terminal input data:', data, 'length:', data.length, 'charCodes:', data.split('').map(c => c.charCodeAt(0)));
-          if (isConnected && websocket.current && currentSessionId.current) {
+          console.log('Input handler state check:', {
+            isConnected: isConnectedRef.current,
+            hasWebSocket: !!websocket.current,
+            sessionId: currentSessionId.current,
+            websocketReadyState: websocket.current?.readyState
+          });
+
+          if (isConnectedRef.current && websocket.current && currentSessionId.current) {
             const message = {
               type: 'input',
               sessionId: currentSessionId.current,
               data: data
             };
             console.log('Sending input message:', message);
-            websocket.current.send(JSON.stringify(message));
+            try {
+              websocket.current.send(JSON.stringify(message));
+              console.log('Input message sent successfully');
+            } catch (error) {
+              console.error('Failed to send input message:', error);
+            }
+          } else {
+            console.warn('Cannot send input - missing requirements:', {
+              isConnected: isConnectedRef.current,
+              hasWebSocket: !!websocket.current,
+              sessionId: currentSessionId.current
+            });
           }
         });
 
@@ -361,7 +387,7 @@ export default function SSHPage() {
           if (fitAddon.current && terminal.current && terminalRef.current) {
             try {
               fitAddon.current.fit();
-              if (isConnected && websocket.current && terminal.current.cols && terminal.current.rows) {
+              if (isConnectedRef.current && websocket.current && terminal.current.cols && terminal.current.rows) {
                 websocket.current.send(JSON.stringify({
                   type: 'resize',
                   cols: terminal.current.cols,
