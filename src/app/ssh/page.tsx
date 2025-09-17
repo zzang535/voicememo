@@ -17,6 +17,8 @@ export default function SSHPage() {
   const terminal = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
   const websocket = useRef<WebSocket | null>(null);
+  const terminalReady = useRef<boolean>(false);
+  const pendingMessages = useRef<string[]>([]);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -29,6 +31,64 @@ export default function SSHPage() {
     username: 'hwangyoon',
     password: '',
   });
+
+  // Safe terminal operations utility functions
+  const waitForTerminalReady = async (timeout = 3000): Promise<boolean> => {
+    const startTime = Date.now();
+    while (!terminalReady.current && Date.now() - startTime < timeout) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return terminalReady.current;
+  };
+
+
+  const safeWriteToTerminal = (text: string): boolean => {
+    if (!terminal.current || !terminalReady.current) {
+      // Terminal not ready, queue the message
+      pendingMessages.current.push(text);
+      return false;
+    }
+
+    try {
+      terminal.current.writeln(text);
+      return true;
+    } catch (error) {
+      console.warn('Error writing to terminal:', error);
+      // Fallback: queue the message
+      pendingMessages.current.push(text);
+      return false;
+    }
+  };
+
+  const flushPendingMessages = () => {
+    if (!terminal.current || !terminalReady.current || pendingMessages.current.length === 0) {
+      return;
+    }
+
+    try {
+      pendingMessages.current.forEach(message => {
+        // SSH data should use write(), not writeln()
+        if (message.includes('\r') || message.includes('\n')) {
+          terminal.current?.write(message);
+        } else {
+          terminal.current?.writeln(message);
+        }
+      });
+      pendingMessages.current = [];
+    } catch (error) {
+      console.warn('Error flushing pending messages:', error);
+    }
+  };
+
+  const addConnectionMessage = (success: boolean) => {
+    if (success) {
+      safeWriteToTerminal('');
+      safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      safeWriteToTerminal('✅ SSH connection established!');
+      safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      safeWriteToTerminal('');
+    }
+  };
 
   // Initialize terminal
   useEffect(() => {
@@ -81,17 +141,42 @@ export default function SSHPage() {
         if (terminalRef.current) {
           terminal.current.open(terminalRef.current);
 
-          // Wait for terminal to be fully rendered before fitting
-          setTimeout(() => {
+          // Wait for terminal to be fully rendered and initialized
+          setTimeout(async () => {
             if (fitAddon.current && terminal.current) {
               fitAddon.current.fit();
+
+              // Wait a bit more for renderer to initialize
+              await new Promise(resolve => setTimeout(resolve, 200));
+
+              // Check if renderer is ready
+              const term = terminal.current as unknown as { _core?: { renderer?: { dimensions?: unknown } } };
+              if (term._core?.renderer?.dimensions) {
+                terminalReady.current = true;
+
+                // Flush any pending messages first
+                flushPendingMessages();
+
+                // Now safe to write initial messages
+                safeWriteToTerminal('SSH Terminal - Connect to remote server');
+                safeWriteToTerminal('Fill in the connection form above to get started.');
+                safeWriteToTerminal('');
+              } else {
+                // Fallback: wait a bit more and try again
+                setTimeout(() => {
+                  terminalReady.current = true;
+
+                  // Flush any pending messages first
+                  flushPendingMessages();
+
+                  safeWriteToTerminal('SSH Terminal - Connect to remote server');
+                  safeWriteToTerminal('Fill in the connection form above to get started.');
+                  safeWriteToTerminal('');
+                }, 300);
+              }
             }
           }, 100);
         }
-
-        terminal.current.writeln('SSH Terminal - Connect to remote server');
-        terminal.current.writeln('Fill in the connection form above to get started.');
-        terminal.current.writeln('');
 
         // Handle terminal input
         terminal.current.onKey(({ key }) => {
@@ -137,6 +222,7 @@ export default function SSHPage() {
         if (websocket.current) {
           websocket.current.close();
         }
+        terminalReady.current = false;
         terminal.current?.dispose();
       };
     }
@@ -158,67 +244,92 @@ export default function SSHPage() {
       websocket.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connected successfully');
         // Send SSH connection request
-        ws.send(JSON.stringify({
+        const connectRequest = {
           type: 'connect',
           config: sshConfig
-        }));
+        };
+        console.log('Sending SSH connection request:', connectRequest);
+        ws.send(JSON.stringify(connectRequest));
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         try {
+          console.log('Raw WebSocket message received:', event.data);
+
           const response = JSON.parse(event.data);
+          console.log('Parsed WebSocket message:', response);
 
           switch (response.type) {
             case 'connected':
+              console.log('SSH connection established successfully');
               setIsConnected(true);
               setIsConnecting(false);
               setShowConnectionForm(false);
-              if (terminal.current) {
+
+              // Simple approach: just add connection message without clearing
+              addConnectionMessage(true);
+              break;
+
+            case 'data':
+              console.log('Received SSH data:', response.data?.substring(0, 50));
+              if (terminal.current && response.data) {
                 try {
-                  terminal.current.clear();
-                  terminal.current.writeln('✅ SSH connection established!');
-                  terminal.current.writeln('');
+                  // Wait for terminal to be ready before writing
+                  if (terminalReady.current) {
+                    terminal.current.write(response.data);
+                  } else {
+                    console.warn('Terminal not ready, queuing SSH data');
+                    // Queue the data for later processing
+                    pendingMessages.current.push(response.data);
+                  }
                 } catch (error) {
-                  console.warn('Error clearing terminal:', error);
+                  console.error('Error writing SSH data to terminal:', error);
+                  // Don't let this error crash the WebSocket connection
                 }
               }
               break;
 
-            case 'data':
-              if (terminal.current && response.data) {
-                terminal.current.write(response.data);
-              }
-              break;
-
             case 'error':
+              console.log('SSH connection error:', response.error);
               setConnectionError(response.error || 'Connection failed');
               setIsConnecting(false);
               setIsConnected(false);
-              terminal.current?.writeln(`❌ Error: ${response.error}`);
+              safeWriteToTerminal(`❌ Error: ${response.error}`);
               break;
 
             case 'disconnected':
+              console.log('SSH connection disconnected');
               setIsConnected(false);
               setShowConnectionForm(true);
-              terminal.current?.writeln('');
-              terminal.current?.writeln('📡 SSH connection closed');
+              safeWriteToTerminal('');
+              safeWriteToTerminal('📡 SSH connection closed');
+              break;
+
+            default:
+              console.log('Unknown message type:', response.type);
               break;
           }
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          console.error('Critical error in WebSocket message handler:', error);
+          console.error('Raw message was:', event.data);
+          // Don't let this error crash the entire connection
         }
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('WebSocket error occurred:', error);
+        console.error('WebSocket readyState:', ws.readyState);
         setConnectionError('Failed to connect to SSH service');
         setIsConnecting(false);
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log('WebSocket connection closed');
+        console.log('Close code:', event.code);
+        console.log('Close reason:', event.reason);
+        console.log('Clean close:', event.wasClean);
         setIsConnected(false);
         setShowConnectionForm(true);
         websocket.current = null;
@@ -238,15 +349,14 @@ export default function SSHPage() {
     }
     setIsConnected(false);
     setShowConnectionForm(true);
-    if (terminal.current) {
-      try {
-        terminal.current.clear();
-        terminal.current.writeln('SSH Terminal - Connect to remote server');
-        terminal.current.writeln('Fill in the connection form above to get started.');
-      } catch (error) {
-        console.warn('Error clearing terminal:', error);
-      }
-    }
+
+    // Simple approach: just add disconnect message
+    safeWriteToTerminal('');
+    safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    safeWriteToTerminal('📡 SSH connection closed');
+    safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    safeWriteToTerminal('SSH Terminal - Connect to remote server');
+    safeWriteToTerminal('Fill in the connection form above to get started.');
   };
 
   return (
