@@ -141,7 +141,7 @@ export default function SSHPage() {
 
     try {
       // Connect to WebSocket server
-      const ws = new WebSocket('ws://localhost:8080');
+      const ws = new WebSocket('wss://voicememo-ws.bird89.com');
       websocket.current = ws;
 
       ws.onopen = () => {
