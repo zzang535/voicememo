@@ -377,8 +377,8 @@ export default function SSHPage() {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       if (transcription.trim() && terminal.current && isConnectedRef.current) {
-        // Send the transcribed text as terminal input
-        const command = transcription.trim();
+        // Send the transcribed text as terminal input with Enter key
+        const command = transcription.trim() + '\r';
         if (websocket.current) {
           const message = {
             type: 'command',
@@ -386,7 +386,7 @@ export default function SSHPage() {
           };
           try {
             websocket.current.send(JSON.stringify(message));
-            console.log('Voice command sent:', command);
+            console.log('Voice command sent with auto-execute:', transcription.trim());
           } catch (error) {
             console.error('Failed to send voice command:', error);
             setVoiceError('Failed to send voice command to terminal');
