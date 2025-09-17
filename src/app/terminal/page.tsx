@@ -92,10 +92,13 @@ export default function TerminalPage() {
       let currentLine = '';
       const commandHistory: string[] = [];
       let historyIndex = -1;
+      let lastCommand = '';
+      let lastCommandTime = 0;
 
       const executeCommand = async (command: string) => {
         const args = command.trim().split(' ');
         const cmd = args[0].toLowerCase();
+        const currentTime = Date.now();
 
         terminal.current?.writeln('');
 
@@ -104,6 +107,16 @@ export default function TerminalPage() {
           terminal.current?.write(`${currentPath}$ `);
           return;
         }
+
+        // Prevent rapid duplicate commands (within 1 second)
+        if (command === lastCommand && currentTime - lastCommandTime < 1000) {
+          terminal.current?.writeln('Duplicate command detected - please wait...');
+          terminal.current?.write(`${currentPath}$ `);
+          return;
+        }
+
+        lastCommand = command;
+        lastCommandTime = currentTime;
 
         switch (cmd) {
           case '':
