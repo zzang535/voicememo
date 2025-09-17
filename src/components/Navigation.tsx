@@ -89,6 +89,18 @@ export default function Navigation() {
             >
               💻 Terminal
             </Link>
+
+            <Link
+              href="/ssh"
+              onClick={closeMenu}
+              className={`block px-4 py-3 rounded-lg transition-colors ${
+                isActive('/ssh')
+                  ? 'bg-blue-100 text-blue-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              🔐 SSH Terminal
+            </Link>
           </nav>
         </div>
       </div>
