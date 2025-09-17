@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { Terminal } from 'xterm';
 import type { FitAddon } from '@xterm/addon-fit';
 import { useStableWebSocket } from '@/hooks/useStableWebSocket';
@@ -27,112 +27,117 @@ export default function SSHPage() {
   const [showConnectionForm, setShowConnectionForm] = useState(true);
 
   const [sshConfig, setSSHConfig] = useState<SSHConfig>({
-    host: '175.196.226.236',
+    host: '192.168.0.7',
     port: 22,
     username: 'hwangyoon',
-    password: '01273100',
+    password: '',
   });
 
-  // Stable WebSocket connection with double mount protection
+  // Fixed WebSocket handlers - no dependencies, handlers in refs
+  const handlersConfig = useMemo(() => ({
+    onOpen: () => {
+      console.log('WebSocket connected - ready for SSH connection');
+    },
+
+    onMessage: (event: MessageEvent) => {
+      console.log('Raw WebSocket message received:', event.data);
+      try {
+        const response = JSON.parse(event.data);
+        console.log('Parsed WebSocket message:', response);
+
+        switch (response.type) {
+          case 'connected':
+            console.log('SSH connection established successfully');
+            if (response.sessionId) {
+              currentSessionId.current = response.sessionId;
+              console.log('Session ID received:', response.sessionId);
+            }
+
+            setIsConnected(true);
+            setIsConnecting(false);
+            setShowConnectionForm(false);
+            addConnectionMessage(true);
+
+            // Focus the terminal when connection is established
+            setTimeout(() => {
+              if (terminal.current) {
+                terminal.current.focus();
+              }
+            }, 100);
+            break;
+
+          case 'data':
+            console.log('Received SSH data:', response.data?.substring(0, 50));
+            if (terminal.current && response.data) {
+              try {
+                if (terminalReady.current && terminal.current) {
+                  try {
+                    console.log('Writing to terminal:', response.data.substring(0, 50));
+                    terminal.current.write(response.data);
+                    console.log('Successfully wrote to terminal');
+                  } catch (writeError) {
+                    console.error('Terminal write error:', writeError);
+                    pendingMessages.current.push(response.data);
+                  }
+                } else {
+                  console.warn('Terminal not ready, queuing SSH data');
+                  pendingMessages.current.push(response.data);
+                  setTimeout(() => {
+                    if (terminalReady.current && terminal.current) {
+                      flushPendingMessages();
+                    }
+                  }, 200);
+                }
+              } catch (error) {
+                console.error('Error processing SSH data:', error);
+                pendingMessages.current.push(response.data);
+              }
+            }
+            break;
+
+          case 'error':
+            console.log('SSH connection error:', response.error);
+            setConnectionError(response.error || 'Connection failed');
+            setIsConnecting(false);
+            setIsConnected(false);
+            safeWriteToTerminal(`❌ Error: ${response.error}`);
+            break;
+
+          case 'disconnected':
+            console.log('SSH connection disconnected');
+            setIsConnected(false);
+            setShowConnectionForm(true);
+            safeWriteToTerminal('');
+            safeWriteToTerminal('📡 SSH connection closed');
+            break;
+
+          default:
+            console.log('Unknown message type:', response.type);
+            break;
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    },
+
+    onClose: (event: CloseEvent) => {
+      console.warn('SSH WebSocket closed:', event);
+      setIsConnected(false);
+      setShowConnectionForm(true);
+    },
+
+    onError: (event: Event) => {
+      console.error('SSH WebSocket error:', event);
+      setConnectionError('Failed to connect to SSH service');
+      setIsConnecting(false);
+    }
+  }), []); // No dependencies - handlers are stable
+
+  // Stable WebSocket connection
   const { websocket, closeWithTrace } = useStableWebSocket(
     'wss://voicememo-ws.bird89.com',
-    {
-      onOpen: () => {
-        console.log('WebSocket connected - ready for SSH connection');
-      },
-
-      onMessage: (event) => {
-        console.log('Raw WebSocket message received:', event.data);
-        handleWebSocketMessage(event);
-      },
-
-      onClose: (event) => {
-        console.warn('SSH WebSocket closed:', event);
-        setIsConnected(false);
-        setShowConnectionForm(true);
-      },
-
-      onError: (event) => {
-        console.error('SSH WebSocket error:', event);
-        setConnectionError('Failed to connect to SSH service');
-        setIsConnecting(false);
-      }
-    }
+    handlersConfig
   );
-
-  // WebSocket message handler
-  const handleWebSocketMessage = (event: MessageEvent) => {
-    try {
-      const response = JSON.parse(event.data);
-      console.log('Parsed WebSocket message:', response);
-
-      switch (response.type) {
-        case 'connected':
-          console.log('SSH connection established successfully');
-          if (response.sessionId) {
-            currentSessionId.current = response.sessionId;
-            console.log('Session ID received:', response.sessionId);
-          }
-
-          setIsConnected(true);
-          setIsConnecting(false);
-          setShowConnectionForm(false);
-          addConnectionMessage(true);
-          break;
-
-        case 'data':
-          console.log('Received SSH data:', response.data?.substring(0, 50));
-          if (terminal.current && response.data) {
-            try {
-              if (terminalReady.current && terminal.current) {
-                try {
-                  console.log('Writing to terminal:', response.data.substring(0, 50));
-                  terminal.current.write(response.data);
-                  console.log('Successfully wrote to terminal');
-                } catch (writeError) {
-                  console.error('Terminal write error:', writeError);
-                  pendingMessages.current.push(response.data);
-                }
-              } else {
-                console.warn('Terminal not ready, queuing SSH data');
-                pendingMessages.current.push(response.data);
-                setTimeout(() => {
-                  if (terminalReady.current && terminal.current) {
-                    flushPendingMessages();
-                  }
-                }, 200);
-              }
-            } catch (error) {
-              console.error('Error processing SSH data:', error);
-              pendingMessages.current.push(response.data);
-            }
-          }
-          break;
-
-        case 'error':
-          console.log('SSH connection error:', response.error);
-          setConnectionError(response.error || 'Connection failed');
-          setIsConnecting(false);
-          setIsConnected(false);
-          safeWriteToTerminal(`❌ Error: ${response.error}`);
-          break;
-
-        case 'disconnected':
-          console.log('SSH connection disconnected');
-          setIsConnected(false);
-          setShowConnectionForm(true);
-          safeWriteToTerminal('');
-          safeWriteToTerminal('📡 SSH connection closed');
-          break;
-
-        default:
-          console.log('Unknown message type:', response.type);
-          break;
-      }
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
 
   // Safe terminal operations utility functions
   const waitForTerminalReady = async (timeout = 3000): Promise<boolean> => {
@@ -227,7 +232,7 @@ export default function SSHPage() {
     if (websocket.current) {
       websocket.current.send(JSON.stringify({ type: 'disconnect' }));
     }
-    closeWithTrace();
+    closeWithTrace(1000, "user-disconnect");
     setIsConnected(false);
     setShowConnectionForm(true);
     currentSessionId.current = null;
@@ -242,6 +247,12 @@ export default function SSHPage() {
 
   // Initialize terminal
   useEffect(() => {
+    console.log('Terminal initialization effect triggered', {
+      hasTerminalRef: !!terminalRef.current,
+      hasTerminal: !!terminal.current,
+      terminalReady: terminalReady.current
+    });
+
     if (terminalRef.current && !terminal.current) {
       const initTerminal = async () => {
         const { Terminal } = await import('xterm');
@@ -328,16 +339,22 @@ export default function SSHPage() {
           }, 100);
         }
 
-        // Handle terminal input
-        terminal.current.onKey(({ key }) => {
-          if (isConnected && websocket.current) {
-            // Send input to SSH server via WebSocket
-            websocket.current.send(JSON.stringify({
-              type: 'command',
-              command: key
-            }));
+        // Handle terminal input - use onData which handles all input including IME
+        terminal.current.onData((data) => {
+          console.log('Terminal input data:', data, 'length:', data.length, 'charCodes:', data.split('').map(c => c.charCodeAt(0)));
+          if (isConnected && websocket.current && currentSessionId.current) {
+            const message = {
+              type: 'input',
+              sessionId: currentSessionId.current,
+              data: data
+            };
+            console.log('Sending input message:', message);
+            websocket.current.send(JSON.stringify(message));
           }
         });
+
+        // Ensure terminal has focus when connected
+        terminal.current.focus();
 
         // Handle resize
         const handleResize = () => {
@@ -364,17 +381,37 @@ export default function SSHPage() {
       initTerminal();
 
       return () => {
+        console.log('Terminal cleanup triggered - this should only happen on unmount!');
+        console.trace('Terminal cleanup call stack:');
+
         const handler = (window as unknown as Record<string, unknown>).__sshTerminalResizeHandler;
         if (handler) {
           window.removeEventListener('resize', handler as EventListener);
           delete (window as unknown as Record<string, unknown>).__sshTerminalResizeHandler;
         }
-        if (websocket.current) {
-          websocket.current.close();
-        }
+        // DON'T close websocket here - it's managed by useStableWebSocket
+        // if (websocket.current) {
+        //   websocket.current.close();
+        // }
         terminalReady.current = false;
         terminal.current?.dispose();
       };
+    }
+  }, []); // Remove isConnected dependency!
+
+  // Focus management when connection state changes
+  useEffect(() => {
+    if (isConnected && terminal.current) {
+      console.log('Connection established, focusing terminal');
+      const focusTerminal = () => {
+        if (terminal.current && terminalReady.current) {
+          terminal.current.focus();
+          console.log('Terminal focused');
+        } else {
+          setTimeout(focusTerminal, 100);
+        }
+      };
+      focusTerminal();
     }
   }, [isConnected]);
 
@@ -531,7 +568,20 @@ export default function SSHPage() {
           <div className="p-4">
             <div
               ref={terminalRef}
-              className="w-full"
+              className="w-full outline-none"
+              onClick={() => {
+                console.log('Terminal container clicked, focusing...');
+                if (terminal.current) {
+                  terminal.current.focus();
+                }
+              }}
+              onFocus={() => {
+                console.log('Terminal container focused');
+                if (terminal.current) {
+                  terminal.current.focus();
+                }
+              }}
+              tabIndex={0}
               style={{
                 height: 'calc(100vh - 350px)',
                 minHeight: '400px',
