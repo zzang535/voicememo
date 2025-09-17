@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Terminal } from 'xterm';
 import type { FitAddon } from '@xterm/addon-fit';
+import { useStableWebSocket } from '@/hooks/useStableWebSocket';
 import 'xterm/css/xterm.css';
 
 interface SSHConfig {
@@ -16,9 +17,9 @@ export default function SSHPage() {
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminal = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
-  const websocket = useRef<WebSocket | null>(null);
   const terminalReady = useRef<boolean>(false);
   const pendingMessages = useRef<string[]>([]);
+  const currentSessionId = useRef<string | null>(null);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -29,8 +30,109 @@ export default function SSHPage() {
     host: '175.196.226.236',
     port: 22,
     username: 'hwangyoon',
-    password: '',
+    password: '01273100',
   });
+
+  // Stable WebSocket connection with double mount protection
+  const { websocket, closeWithTrace } = useStableWebSocket(
+    'wss://voicememo-ws.bird89.com',
+    {
+      onOpen: () => {
+        console.log('WebSocket connected - ready for SSH connection');
+      },
+
+      onMessage: (event) => {
+        console.log('Raw WebSocket message received:', event.data);
+        handleWebSocketMessage(event);
+      },
+
+      onClose: (event) => {
+        console.warn('SSH WebSocket closed:', event);
+        setIsConnected(false);
+        setShowConnectionForm(true);
+      },
+
+      onError: (event) => {
+        console.error('SSH WebSocket error:', event);
+        setConnectionError('Failed to connect to SSH service');
+        setIsConnecting(false);
+      }
+    }
+  );
+
+  // WebSocket message handler
+  const handleWebSocketMessage = (event: MessageEvent) => {
+    try {
+      const response = JSON.parse(event.data);
+      console.log('Parsed WebSocket message:', response);
+
+      switch (response.type) {
+        case 'connected':
+          console.log('SSH connection established successfully');
+          if (response.sessionId) {
+            currentSessionId.current = response.sessionId;
+            console.log('Session ID received:', response.sessionId);
+          }
+
+          setIsConnected(true);
+          setIsConnecting(false);
+          setShowConnectionForm(false);
+          addConnectionMessage(true);
+          break;
+
+        case 'data':
+          console.log('Received SSH data:', response.data?.substring(0, 50));
+          if (terminal.current && response.data) {
+            try {
+              if (terminalReady.current && terminal.current) {
+                try {
+                  console.log('Writing to terminal:', response.data.substring(0, 50));
+                  terminal.current.write(response.data);
+                  console.log('Successfully wrote to terminal');
+                } catch (writeError) {
+                  console.error('Terminal write error:', writeError);
+                  pendingMessages.current.push(response.data);
+                }
+              } else {
+                console.warn('Terminal not ready, queuing SSH data');
+                pendingMessages.current.push(response.data);
+                setTimeout(() => {
+                  if (terminalReady.current && terminal.current) {
+                    flushPendingMessages();
+                  }
+                }, 200);
+              }
+            } catch (error) {
+              console.error('Error processing SSH data:', error);
+              pendingMessages.current.push(response.data);
+            }
+          }
+          break;
+
+        case 'error':
+          console.log('SSH connection error:', response.error);
+          setConnectionError(response.error || 'Connection failed');
+          setIsConnecting(false);
+          setIsConnected(false);
+          safeWriteToTerminal(`❌ Error: ${response.error}`);
+          break;
+
+        case 'disconnected':
+          console.log('SSH connection disconnected');
+          setIsConnected(false);
+          setShowConnectionForm(true);
+          safeWriteToTerminal('');
+          safeWriteToTerminal('📡 SSH connection closed');
+          break;
+
+        default:
+          console.log('Unknown message type:', response.type);
+          break;
+      }
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  };
 
   // Safe terminal operations utility functions
   const waitForTerminalReady = async (timeout = 3000): Promise<boolean> => {
@@ -40,7 +142,6 @@ export default function SSHPage() {
     }
     return terminalReady.current;
   };
-
 
   const safeWriteToTerminal = (text: string): boolean => {
     if (!terminal.current || !terminalReady.current) {
@@ -88,6 +189,55 @@ export default function SSHPage() {
       safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       safeWriteToTerminal('');
     }
+  };
+
+  // Simplified SSH connection function
+  const connectToSSH = () => {
+    if (!sshConfig.host || !sshConfig.username || !sshConfig.password) {
+      setConnectionError('Please fill in all required fields');
+      return;
+    }
+
+    if (!websocket.current) {
+      setConnectionError('WebSocket connection not established');
+      return;
+    }
+
+    setIsConnecting(true);
+    setConnectionError(null);
+
+    console.log('Sending SSH connection request...');
+    const connectRequest = {
+      type: 'connect',
+      config: sshConfig
+    };
+
+    try {
+      websocket.current.send(JSON.stringify(connectRequest));
+      console.log('SSH connection request sent:', connectRequest);
+    } catch (error) {
+      console.error('Error sending SSH connection request:', error);
+      setConnectionError('Failed to send connection request');
+      setIsConnecting(false);
+    }
+  };
+
+  // Disconnect function
+  const disconnectSSH = () => {
+    if (websocket.current) {
+      websocket.current.send(JSON.stringify({ type: 'disconnect' }));
+    }
+    closeWithTrace();
+    setIsConnected(false);
+    setShowConnectionForm(true);
+    currentSessionId.current = null;
+
+    safeWriteToTerminal('');
+    safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    safeWriteToTerminal('📡 SSH connection closed');
+    safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    safeWriteToTerminal('SSH Terminal - Connect to remote server');
+    safeWriteToTerminal('Fill in the connection form above to get started.');
   };
 
   // Initialize terminal
@@ -228,136 +378,31 @@ export default function SSHPage() {
     }
   }, [isConnected]);
 
-  // Connect to SSH server
-  const connectToSSH = async () => {
-    if (!sshConfig.host || !sshConfig.username || !sshConfig.password) {
-      setConnectionError('Please fill in all required fields');
-      return;
-    }
+  // Add global error handler to catch unhandled errors
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      console.error('Global error caught:', event.error);
+      console.error('Error message:', event.message);
+      console.error('Error filename:', event.filename);
+      console.error('Error lineno:', event.lineno);
+      // Prevent the error from propagating
+      event.preventDefault();
+    };
 
-    setIsConnecting(true);
-    setConnectionError(null);
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      // Prevent the error from propagating
+      event.preventDefault();
+    };
 
-    try {
-      // Connect to WebSocket server
-      const ws = new WebSocket('wss://voicememo-ws.bird89.com');
-      websocket.current = ws;
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
-      ws.onopen = () => {
-        console.log('WebSocket connected successfully');
-        // Send SSH connection request
-        const connectRequest = {
-          type: 'connect',
-          config: sshConfig
-        };
-        console.log('Sending SSH connection request:', connectRequest);
-        ws.send(JSON.stringify(connectRequest));
-      };
-
-      ws.onmessage = async (event) => {
-        try {
-          console.log('Raw WebSocket message received:', event.data);
-
-          const response = JSON.parse(event.data);
-          console.log('Parsed WebSocket message:', response);
-
-          switch (response.type) {
-            case 'connected':
-              console.log('SSH connection established successfully');
-              setIsConnected(true);
-              setIsConnecting(false);
-              setShowConnectionForm(false);
-
-              // Simple approach: just add connection message without clearing
-              addConnectionMessage(true);
-              break;
-
-            case 'data':
-              console.log('Received SSH data:', response.data?.substring(0, 50));
-              if (terminal.current && response.data) {
-                try {
-                  // Wait for terminal to be ready before writing
-                  if (terminalReady.current) {
-                    terminal.current.write(response.data);
-                  } else {
-                    console.warn('Terminal not ready, queuing SSH data');
-                    // Queue the data for later processing
-                    pendingMessages.current.push(response.data);
-                  }
-                } catch (error) {
-                  console.error('Error writing SSH data to terminal:', error);
-                  // Don't let this error crash the WebSocket connection
-                }
-              }
-              break;
-
-            case 'error':
-              console.log('SSH connection error:', response.error);
-              setConnectionError(response.error || 'Connection failed');
-              setIsConnecting(false);
-              setIsConnected(false);
-              safeWriteToTerminal(`❌ Error: ${response.error}`);
-              break;
-
-            case 'disconnected':
-              console.log('SSH connection disconnected');
-              setIsConnected(false);
-              setShowConnectionForm(true);
-              safeWriteToTerminal('');
-              safeWriteToTerminal('📡 SSH connection closed');
-              break;
-
-            default:
-              console.log('Unknown message type:', response.type);
-              break;
-          }
-        } catch (error) {
-          console.error('Critical error in WebSocket message handler:', error);
-          console.error('Raw message was:', event.data);
-          // Don't let this error crash the entire connection
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error occurred:', error);
-        console.error('WebSocket readyState:', ws.readyState);
-        setConnectionError('Failed to connect to SSH service');
-        setIsConnecting(false);
-      };
-
-      ws.onclose = (event) => {
-        console.log('WebSocket connection closed');
-        console.log('Close code:', event.code);
-        console.log('Close reason:', event.reason);
-        console.log('Clean close:', event.wasClean);
-        setIsConnected(false);
-        setShowConnectionForm(true);
-        websocket.current = null;
-      };
-
-    } catch {
-      setConnectionError('Failed to establish connection');
-      setIsConnecting(false);
-    }
-  };
-
-  // Disconnect from SSH
-  const disconnectSSH = () => {
-    if (websocket.current) {
-      websocket.current.send(JSON.stringify({ type: 'disconnect' }));
-      websocket.current.close();
-    }
-    setIsConnected(false);
-    setShowConnectionForm(true);
-
-    // Simple approach: just add disconnect message
-    safeWriteToTerminal('');
-    safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    safeWriteToTerminal('📡 SSH connection closed');
-    safeWriteToTerminal('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    safeWriteToTerminal('SSH Terminal - Connect to remote server');
-    safeWriteToTerminal('Fill in the connection form above to get started.');
-  };
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-2 sm:p-4">
