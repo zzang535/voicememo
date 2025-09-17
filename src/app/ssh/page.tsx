@@ -24,9 +24,9 @@ export default function SSHPage() {
   const [showConnectionForm, setShowConnectionForm] = useState(true);
 
   const [sshConfig, setSSHConfig] = useState<SSHConfig>({
-    host: '',
+    host: '175.196.226.236',
     port: 22,
-    username: '',
+    username: 'hwangyoon',
     password: '',
   });
 
@@ -69,6 +69,8 @@ export default function SSHPage() {
           convertEol: true,
           allowProposedApi: true,
           scrollback: 1000,
+          cols: 80,
+          rows: 24,
         });
 
         const webLinksAddon = new WebLinksAddon();
@@ -78,13 +80,18 @@ export default function SSHPage() {
 
         if (terminalRef.current) {
           terminal.current.open(terminalRef.current);
+
+          // Wait for terminal to be fully rendered before fitting
+          setTimeout(() => {
+            if (fitAddon.current && terminal.current) {
+              fitAddon.current.fit();
+            }
+          }, 100);
         }
 
         terminal.current.writeln('SSH Terminal - Connect to remote server');
         terminal.current.writeln('Fill in the connection form above to get started.');
         terminal.current.writeln('');
-
-        fitAddon.current.fit();
 
         // Handle terminal input
         terminal.current.onKey(({ key }) => {
@@ -99,13 +106,19 @@ export default function SSHPage() {
 
         // Handle resize
         const handleResize = () => {
-          fitAddon.current?.fit();
-          if (isConnected && websocket.current && terminal.current) {
-            websocket.current.send(JSON.stringify({
-              type: 'resize',
-              cols: terminal.current.cols,
-              rows: terminal.current.rows
-            }));
+          if (fitAddon.current && terminal.current && terminalRef.current) {
+            try {
+              fitAddon.current.fit();
+              if (isConnected && websocket.current && terminal.current.cols && terminal.current.rows) {
+                websocket.current.send(JSON.stringify({
+                  type: 'resize',
+                  cols: terminal.current.cols,
+                  rows: terminal.current.rows
+                }));
+              }
+            } catch (error) {
+              console.warn('Error during terminal resize:', error);
+            }
           }
         };
 
@@ -162,9 +175,15 @@ export default function SSHPage() {
               setIsConnected(true);
               setIsConnecting(false);
               setShowConnectionForm(false);
-              terminal.current?.clear();
-              terminal.current?.writeln('✅ SSH connection established!');
-              terminal.current?.writeln('');
+              if (terminal.current) {
+                try {
+                  terminal.current.clear();
+                  terminal.current.writeln('✅ SSH connection established!');
+                  terminal.current.writeln('');
+                } catch (error) {
+                  console.warn('Error clearing terminal:', error);
+                }
+              }
               break;
 
             case 'data':
@@ -219,9 +238,15 @@ export default function SSHPage() {
     }
     setIsConnected(false);
     setShowConnectionForm(true);
-    terminal.current?.clear();
-    terminal.current?.writeln('SSH Terminal - Connect to remote server');
-    terminal.current?.writeln('Fill in the connection form above to get started.');
+    if (terminal.current) {
+      try {
+        terminal.current.clear();
+        terminal.current.writeln('SSH Terminal - Connect to remote server');
+        terminal.current.writeln('Fill in the connection form above to get started.');
+      } catch (error) {
+        console.warn('Error clearing terminal:', error);
+      }
+    }
   };
 
   return (
