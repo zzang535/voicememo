@@ -32,12 +32,12 @@ export default function Header({ title, subtitle, showDisconnect = false, onDisc
           <div className="w-12 flex-shrink-0 flex items-center">
             <button
               onClick={toggleNav}
-              className="w-10 h-10 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+              className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
             >
               <div className="w-5 h-5 flex flex-col justify-center space-y-1">
-                <div className="h-0.5 bg-gray-600" />
-                <div className="h-0.5 bg-gray-600" />
-                <div className="h-0.5 bg-gray-600" />
+                <div className="h-0.5 bg-gray-300" />
+                <div className="h-0.5 bg-gray-300" />
+                <div className="h-0.5 bg-gray-300" />
               </div>
             </button>
           </div>
