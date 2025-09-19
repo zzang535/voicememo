@@ -25,9 +25,12 @@ export default function VoiceMemoPage() {
     speechSupport: boolean;
     mediaDevicesSupport: boolean;
     isMobile: boolean;
+    useServerSTT: boolean;
   } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<unknown>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const chunkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 메모 목록 조회 함수
   const fetchMemos = async (userIdParam: string) => {
@@ -112,11 +115,15 @@ export default function VoiceMemoPage() {
     const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
     const mediaDevicesSupport = 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices;
 
+    // 모바일 환경에서는 서버 STT 사용, 데스크톱에서는 Web Speech API 사용
+    const useServerSTT = isMobile || !speechSupport;
+
     setDebugInfo({
       userAgent: navigator.userAgent,
       speechSupport,
       mediaDevicesSupport,
-      isMobile
+      isMobile,
+      useServerSTT
     });
 
     console.log('🔍 디버그 정보:', {
@@ -129,6 +136,39 @@ export default function VoiceMemoPage() {
     // 메모 목록 조회
     fetchMemos(initUserId);
   }, []);
+
+  // 서버 STT로 오디오 청크 업로드 및 텍스트 인식
+  const uploadAudioChunk = async (audioBlob: Blob) => {
+    try {
+      console.log('📤 오디오 청크 업로드 시작:', { size: audioBlob.size, type: audioBlob.type });
+
+      const formData = new FormData();
+      formData.append('audio', audioBlob, `chunk.${audioBlob.type.includes('webm') ? 'webm' : 'mp4'}`);
+
+      const response = await fetch('/api/stt', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`STT API 오류: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('📝 STT 결과 수신:', result);
+
+      if (result.text) {
+        setCurrentTranscript(prev => {
+          const newText = (prev + ' ' + result.text).trim();
+          console.log('📄 누적 텍스트 업데이트:', newText);
+          return newText;
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ STT 업로드 오류:', error);
+    }
+  };
 
   const startRecording = async () => {
     try {
@@ -143,13 +183,56 @@ export default function VoiceMemoPage() {
       });
       console.log('✅ 마이크 스트림 획득 성공');
 
-      const mediaRecorder = new MediaRecorder(stream);
+      // MediaRecorder mimeType 호환성 처리
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/mp4'; // iOS Safari 대비
+        }
+      }
+      console.log('📼 사용할 MIME 타입:', mimeType);
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
-      // Web Speech API 지원 확인 및 초기화
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        console.log('✅ Web Speech API 지원됨');
+      // 오디오 청크 초기화
+      audioChunksRef.current = [];
 
+      // MediaRecorder 이벤트 설정
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+          console.log('📦 오디오 청크 수집:', event.data.size, 'bytes');
+        }
+      };
+
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+      const useServerSTT = isMobile || !speechSupport;
+
+      if (useServerSTT) {
+        console.log('🔄 서버 STT 모드 시작 (모바일 또는 Web Speech 미지원)');
+
+        // 모바일/서버 STT: 3초마다 청크 업로드
+        chunkTimerRef.current = setInterval(async () => {
+          if (audioChunksRef.current.length === 0) return;
+
+          // 현재까지 수집된 청크들을 하나의 Blob으로 합치기
+          const chunks = audioChunksRef.current.splice(0); // 모든 청크 가져오고 비우기
+          const audioBlob = new Blob(chunks, { type: mimeType });
+
+          if (audioBlob.size > 0) {
+            await uploadAudioChunk(audioBlob);
+          }
+        }, 3000); // 3초마다 업로드
+
+        console.log('⏰ 3초 간격 청크 업로드 타이머 시작');
+
+      } else {
+        console.log('🗣️ 데스크톱 Web Speech API 모드 시작');
+
+        // 데스크톱: Web Speech API 사용
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
@@ -158,19 +241,11 @@ export default function VoiceMemoPage() {
         recognition.lang = 'ko-KR';
         recognition.maxAlternatives = 1;
 
-        // 모바일 환경을 위한 추가 설정
-        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-          console.log('📱 모바일 환경 감지 - Speech Recognition 설정 조정');
-          recognition.continuous = false; // 모바일에서는 continuous false가 더 안정적
-          recognition.interimResults = false; // 모바일에서는 interim results 비활성화
-        }
-
         recognition.onstart = () => {
-          console.log('🎤 Speech Recognition 시작됨');
+          console.log('🎤 Web Speech Recognition 시작됨');
         };
 
         recognition.onresult = (event: any) => {
-          console.log('📝 음성 인식 결과 수신:', event);
           let transcript = '';
           let finalTranscript = '';
 
@@ -184,60 +259,35 @@ export default function VoiceMemoPage() {
           }
 
           const currentText = finalTranscript || transcript;
-          console.log('📝 인식된 텍스트:', currentText);
+          console.log('📝 Web Speech 인식 텍스트:', currentText);
           setCurrentTranscript(currentText);
         };
 
         recognition.onerror = (event: any) => {
-          console.error('❌ Speech Recognition 오류:', event.error);
-          console.error('오류 세부사항:', event);
-
-          // 오류 타입별 처리
-          if (event.error === 'no-speech') {
-            console.log('⚠️ 음성이 감지되지 않음');
-          } else if (event.error === 'audio-capture') {
-            console.log('❌ 오디오 캡처 실패');
-            alert('마이크 접근에 문제가 있습니다.');
-          } else if (event.error === 'not-allowed') {
-            console.log('❌ 마이크 권한 거부됨');
+          console.error('❌ Web Speech Recognition 오류:', event.error);
+          if (event.error === 'not-allowed') {
             alert('마이크 권한을 허용해주세요.');
           }
         };
 
         recognition.onend = () => {
-          console.log('🛑 Speech Recognition 종료됨');
-
-          // 모바일에서는 자동으로 재시작
-          if (isRecording && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            console.log('📱 모바일 환경에서 Speech Recognition 재시작');
-            setTimeout(() => {
-              if (isRecording && recognitionRef.current) {
-                try {
-                  (recognitionRef.current as any).start();
-                } catch (error) {
-                  console.log('재시작 중 오류:', error);
-                }
-              }
-            }, 100);
-          }
+          console.log('🛑 Web Speech Recognition 종료됨');
         };
 
         try {
           recognition.start();
           recognitionRef.current = recognition;
-          console.log('🎤 Speech Recognition 시작 명령 실행');
+          console.log('🎤 Web Speech Recognition 시작 명령 실행');
         } catch (speechError) {
-          console.error('❌ Speech Recognition 시작 실패:', speechError);
+          console.error('❌ Web Speech Recognition 시작 실패:', speechError);
         }
-      } else {
-        console.log('❌ Web Speech API가 지원되지 않는 브라우저');
-        alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
       }
 
-      mediaRecorder.start();
+      // MediaRecorder 시작 (1초 간격으로 dataavailable 이벤트 발생)
+      mediaRecorder.start(1000);
       setIsRecording(true);
       setCurrentTranscript('');
-      console.log('✅ 녹음 시작 완료');
+      console.log('✅ 녹음 시작 완료 - 모드:', useServerSTT ? '서버 STT' : 'Web Speech API');
 
     } catch (error) {
       console.error('❌ 녹음 시작 중 오류:', error);
@@ -248,30 +298,55 @@ export default function VoiceMemoPage() {
   const stopRecording = async () => {
     console.log('🛑 음성 녹음 중지 시작...');
 
+    // 청크 업로드 타이머 중지
+    if (chunkTimerRef.current) {
+      clearInterval(chunkTimerRef.current);
+      chunkTimerRef.current = null;
+      console.log('⏰ 청크 업로드 타이머 중지');
+    }
+
+    // MediaRecorder 중지
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       console.log('✅ MediaRecorder 중지 완료');
     }
 
+    // Web Speech Recognition 중지 (데스크톱에서만)
     if (recognitionRef.current) {
       (recognitionRef.current as any).stop();
-      console.log('✅ Speech Recognition 중지 완료');
+      console.log('✅ Web Speech Recognition 중지 완료');
     }
 
     setIsRecording(false);
-    console.log('📝 현재 인식된 텍스트:', currentTranscript);
 
-    // 음성 인식 결과를 데이터베이스에 저장
-    if (currentTranscript.trim()) {
-      console.log('💾 메모 저장 시작...');
-      await saveMemo(currentTranscript.trim());
-      console.log('✅ 메모 저장 완료');
-    } else {
-      console.log('⚠️ 저장할 텍스트가 없습니다');
+    // 서버 STT 모드에서 마지막 남은 청크 처리
+    if (audioChunksRef.current.length > 0) {
+      console.log('📤 마지막 남은 청크 업로드 처리...');
+      const chunks = audioChunksRef.current.splice(0);
+      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+      const audioBlob = new Blob(chunks, { type: mimeType });
+
+      if (audioBlob.size > 0) {
+        await uploadAudioChunk(audioBlob);
+      }
     }
 
-    setCurrentTranscript('');
+    // 텍스트 인식 완료 대기 (서버 STT의 경우 약간의 지연 고려)
+    setTimeout(async () => {
+      console.log('📝 최종 인식된 텍스트:', currentTranscript);
+
+      // 음성 인식 결과를 데이터베이스에 저장
+      if (currentTranscript.trim()) {
+        console.log('💾 메모 저장 시작...');
+        await saveMemo(currentTranscript.trim());
+        console.log('✅ 메모 저장 완료');
+      } else {
+        console.log('⚠️ 저장할 텍스트가 없습니다');
+      }
+
+      setCurrentTranscript('');
+    }, 1000); // 1초 대기 후 저장
   };
 
   return (
@@ -303,6 +378,12 @@ export default function VoiceMemoPage() {
                 <span className="text-gray-500">환경:</span> {debugInfo.isMobile ? '📱 모바일' : '💻 데스크톱'}
               </div>
               <div>
+                <span className="text-gray-500">STT 모드:</span>
+                <span className={debugInfo.useServerSTT ? 'text-blue-400' : 'text-green-400'}>
+                  {debugInfo.useServerSTT ? ' 🔄 서버 STT' : ' 🗣️ Web Speech API'}
+                </span>
+              </div>
+              <div>
                 <span className="text-gray-500">Speech API:</span>
                 <span className={debugInfo.speechSupport ? 'text-green-400' : 'text-red-400'}>
                   {debugInfo.speechSupport ? ' ✅ 지원됨' : ' ❌ 지원되지 않음'}
@@ -317,6 +398,11 @@ export default function VoiceMemoPage() {
               <div className="text-gray-500 text-xs truncate">
                 브라우저: {debugInfo.userAgent.split(' ').slice(-2).join(' ')}
               </div>
+              {debugInfo.useServerSTT && (
+                <div className="text-xs text-blue-300 mt-2 p-2 bg-blue-900/20 rounded">
+                  📤 3초마다 서버로 오디오 청크 전송하여 텍스트 변환
+                </div>
+              )}
             </div>
           </div>
         )}
