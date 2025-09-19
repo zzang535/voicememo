@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const result = await executeQuery(
       'INSERT INTO memo (user_id, content) VALUES (?, ?)',
       [userId, content.trim()]
-    ) as any;
+    ) as { insertId: number };
 
     return NextResponse.json({
       success: true,
@@ -100,7 +100,7 @@ export async function DELETE(request: NextRequest) {
     const result = await executeQuery(
       'DELETE FROM memo WHERE id = ? AND user_id = ?',
       [memoId, userId]
-    ) as any;
+    ) as { affectedRows: number };
 
     if (result.affectedRows === 0) {
       return NextResponse.json({
