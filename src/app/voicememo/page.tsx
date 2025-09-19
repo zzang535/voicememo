@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useState, useRef } from 'react';
 import Header from '@/components/Header';
 
@@ -8,7 +10,7 @@ export default function VoiceMemoPage() {
   const [memos, setMemos] = useState<string[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<unknown>(null);
 
   const startRecording = async () => {
     try {
@@ -18,14 +20,14 @@ export default function VoiceMemoPage() {
       mediaRecorderRef.current = mediaRecorder;
 
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'ko-KR';
 
-        recognition.onresult = (event) => {
+        recognition.onresult = (event: any) => {
           let transcript = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
@@ -54,7 +56,7 @@ export default function VoiceMemoPage() {
     }
 
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      (recognitionRef.current as any).stop();
     }
 
     if (currentTranscript.trim()) {
