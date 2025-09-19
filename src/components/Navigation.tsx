@@ -47,7 +47,18 @@ export default function Navigation({ isOpen, onClose }: NavigationProps) {
                   : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
-              🎤 Voice Memo
+              🎤 음성 녹음
+            </Link>
+            <Link
+              href="/memos"
+              onClick={onClose}
+              className={`block px-4 py-3 rounded-lg transition-colors ${
+                isActive('/memos')
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'text-gray-300 hover:bg-gray-800'
+              }`}
+            >
+              📝 메모 목록
             </Link>
           </nav>
         </div>

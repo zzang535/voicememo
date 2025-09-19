@@ -6,14 +6,6 @@ import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import { getUserId, getShortUserId } from '@/utils/userUtils';
 
-interface ServiceData {
-  id: number;
-  name: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface MemoData {
   id: number;
   user_id: string;
@@ -26,8 +18,6 @@ export default function VoiceMemoPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [memos, setMemos] = useState<MemoData[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
-  const [serviceData, setServiceData] = useState<ServiceData[]>([]);
-  const [isLoadingService, setIsLoadingService] = useState(true);
   const [isLoadingMemos, setIsLoadingMemos] = useState(true);
   const [userId, setUserId] = useState<string>('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -111,25 +101,7 @@ export default function VoiceMemoPage() {
     setUserId(initUserId);
     console.log('사용자 ID 초기화:', initUserId);
 
-    const fetchServiceData = async () => {
-      try {
-        const response = await fetch('/api/service');
-        const result = await response.json();
-
-        if (result.success) {
-          setServiceData(result.data);
-        } else {
-          console.error('Failed to fetch service data:', result.message);
-        }
-      } catch (error) {
-        console.error('Error fetching service data:', error);
-      } finally {
-        setIsLoadingService(false);
-      }
-    };
-
-    // 데이터 조회
-    fetchServiceData();
+    // 메모 목록 조회
     fetchMemos(initUserId);
   }, []);
 
@@ -209,38 +181,6 @@ export default function VoiceMemoPage() {
           )}
         </div>
 
-        {/* Service Information Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">서비스 정보</h2>
-          {isLoadingService ? (
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-700 rounded w-full"></div>
-              </div>
-            </div>
-          ) : serviceData.length > 0 ? (
-            <div className="space-y-4">
-              {serviceData.map((service) => (
-                <div key={service.id} className="bg-gray-800 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-blue-400 mb-2">
-                    {service.name}
-                  </h3>
-                  <p className="text-gray-300 leading-relaxed">
-                    {service.content}
-                  </p>
-                  <div className="text-xs text-gray-500 mt-2">
-                    생성일: {new Date(service.created_at).toLocaleString('ko-KR')}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-800 rounded-lg p-4">
-              <p className="text-gray-400">서비스 정보를 불러올 수 없습니다.</p>
-            </div>
-          )}
-        </div>
 
         {/* Recording Button */}
         <div className="flex justify-center mb-8">
