@@ -20,6 +20,12 @@ export default function VoiceMemoPage() {
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isLoadingMemos, setIsLoadingMemos] = useState(true);
   const [userId, setUserId] = useState<string>('');
+  const [debugInfo, setDebugInfo] = useState<{
+    userAgent: string;
+    speechSupport: boolean;
+    mediaDevicesSupport: boolean;
+    isMobile: boolean;
+  } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<unknown>(null);
 
@@ -101,63 +107,170 @@ export default function VoiceMemoPage() {
     setUserId(initUserId);
     console.log('사용자 ID 초기화:', initUserId);
 
+    // 디버그 정보 설정
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    const mediaDevicesSupport = 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices;
+
+    setDebugInfo({
+      userAgent: navigator.userAgent,
+      speechSupport,
+      mediaDevicesSupport,
+      isMobile
+    });
+
+    console.log('🔍 디버그 정보:', {
+      isMobile,
+      speechSupport,
+      mediaDevicesSupport,
+      userAgent: navigator.userAgent
+    });
+
     // 메모 목록 조회
     fetchMemos(initUserId);
   }, []);
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('🎤 음성 녹음 시작 시도...');
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      console.log('✅ 마이크 스트림 획득 성공');
 
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
 
+      // Web Speech API 지원 확인 및 초기화
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        console.log('✅ Web Speech API 지원됨');
+
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'ko-KR';
+        recognition.maxAlternatives = 1;
 
-        recognition.onresult = (event: any) => {
-          let transcript = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-          }
-          setCurrentTranscript(transcript);
+        // 모바일 환경을 위한 추가 설정
+        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+          console.log('📱 모바일 환경 감지 - Speech Recognition 설정 조정');
+          recognition.continuous = false; // 모바일에서는 continuous false가 더 안정적
+          recognition.interimResults = false; // 모바일에서는 interim results 비활성화
+        }
+
+        recognition.onstart = () => {
+          console.log('🎤 Speech Recognition 시작됨');
         };
 
-        recognition.start();
-        recognitionRef.current = recognition;
+        recognition.onresult = (event: any) => {
+          console.log('📝 음성 인식 결과 수신:', event);
+          let transcript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              finalTranscript += result[0].transcript;
+            } else {
+              transcript += result[0].transcript;
+            }
+          }
+
+          const currentText = finalTranscript || transcript;
+          console.log('📝 인식된 텍스트:', currentText);
+          setCurrentTranscript(currentText);
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error('❌ Speech Recognition 오류:', event.error);
+          console.error('오류 세부사항:', event);
+
+          // 오류 타입별 처리
+          if (event.error === 'no-speech') {
+            console.log('⚠️ 음성이 감지되지 않음');
+          } else if (event.error === 'audio-capture') {
+            console.log('❌ 오디오 캡처 실패');
+            alert('마이크 접근에 문제가 있습니다.');
+          } else if (event.error === 'not-allowed') {
+            console.log('❌ 마이크 권한 거부됨');
+            alert('마이크 권한을 허용해주세요.');
+          }
+        };
+
+        recognition.onend = () => {
+          console.log('🛑 Speech Recognition 종료됨');
+
+          // 모바일에서는 자동으로 재시작
+          if (isRecording && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            console.log('📱 모바일 환경에서 Speech Recognition 재시작');
+            setTimeout(() => {
+              if (isRecording && recognitionRef.current) {
+                try {
+                  (recognitionRef.current as any).start();
+                } catch (error) {
+                  console.log('재시작 중 오류:', error);
+                }
+              }
+            }, 100);
+          }
+        };
+
+        try {
+          recognition.start();
+          recognitionRef.current = recognition;
+          console.log('🎤 Speech Recognition 시작 명령 실행');
+        } catch (speechError) {
+          console.error('❌ Speech Recognition 시작 실패:', speechError);
+        }
+      } else {
+        console.log('❌ Web Speech API가 지원되지 않는 브라우저');
+        alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
       }
 
       mediaRecorder.start();
       setIsRecording(true);
       setCurrentTranscript('');
+      console.log('✅ 녹음 시작 완료');
 
     } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('마이크 접근 권한이 필요합니다.');
+      console.error('❌ 녹음 시작 중 오류:', error);
+      alert('마이크 접근 권한이 필요합니다. 브라우저 설정을 확인해주세요.');
     }
   };
 
   const stopRecording = async () => {
+    console.log('🛑 음성 녹음 중지 시작...');
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      console.log('✅ MediaRecorder 중지 완료');
     }
 
     if (recognitionRef.current) {
       (recognitionRef.current as any).stop();
-    }
-
-    // 음성 인식 결과를 데이터베이스에 저장
-    if (currentTranscript.trim()) {
-      await saveMemo(currentTranscript.trim());
+      console.log('✅ Speech Recognition 중지 완료');
     }
 
     setIsRecording(false);
+    console.log('📝 현재 인식된 텍스트:', currentTranscript);
+
+    // 음성 인식 결과를 데이터베이스에 저장
+    if (currentTranscript.trim()) {
+      console.log('💾 메모 저장 시작...');
+      await saveMemo(currentTranscript.trim());
+      console.log('✅ 메모 저장 완료');
+    } else {
+      console.log('⚠️ 저장할 텍스트가 없습니다');
+    }
+
     setCurrentTranscript('');
   };
 
@@ -181,6 +294,32 @@ export default function VoiceMemoPage() {
           )}
         </div>
 
+        {/* Debug Information for Mobile Testing */}
+        {debugInfo && (
+          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+            <h3 className="text-sm font-semibold mb-2 text-yellow-400">🔍 디버그 정보</h3>
+            <div className="space-y-1 text-xs text-gray-300">
+              <div>
+                <span className="text-gray-500">환경:</span> {debugInfo.isMobile ? '📱 모바일' : '💻 데스크톱'}
+              </div>
+              <div>
+                <span className="text-gray-500">Speech API:</span>
+                <span className={debugInfo.speechSupport ? 'text-green-400' : 'text-red-400'}>
+                  {debugInfo.speechSupport ? ' ✅ 지원됨' : ' ❌ 지원되지 않음'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">MediaDevices:</span>
+                <span className={debugInfo.mediaDevicesSupport ? 'text-green-400' : 'text-red-400'}>
+                  {debugInfo.mediaDevicesSupport ? ' ✅ 지원됨' : ' ❌ 지원되지 않음'}
+                </span>
+              </div>
+              <div className="text-gray-500 text-xs truncate">
+                브라우저: {debugInfo.userAgent.split(' ').slice(-2).join(' ')}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recording Button */}
         <div className="flex justify-center mb-8">
