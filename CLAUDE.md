@@ -1,5 +1,12 @@
 # Claude Code Instructions
 
+## Commit Message Rules
+
+**All commit messages must be written in Korean (한글)**
+- Use Korean for commit titles and descriptions
+- Keep the existing format with 🤖 Generated with Claude Code footer
+- Example: "MySQL 데이터베이스 연동 및 서비스 정보 표시 기능 추가"
+
 ## Version Management Rules
 
 When performing version updates (`version up` command):
