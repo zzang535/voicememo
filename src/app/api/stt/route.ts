@@ -17,7 +17,7 @@ try {
     console.log('🔐 서비스 계정 방식 사용');
     speechClient = new SpeechClient();
   }
-} catch (error) {
+} catch (initError) {
   console.log('⚠️ Google Speech 클라이언트 초기화 실패, Mock 모드로 동작');
   speechClient = new SpeechClient(); // fallback
 }
@@ -132,7 +132,7 @@ async function processWithGoogleSTTApiKey(buffer: Buffer, mimeType: string): Pro
 
   // 결과 추출
   const transcription = result.results
-    ?.map((result: any) => result.alternatives?.[0]?.transcript)
+    ?.map((resultItem: { alternatives?: Array<{ transcript?: string }> }) => resultItem.alternatives?.[0]?.transcript)
     .filter(Boolean)
     .join(' ') || '';
 
@@ -190,7 +190,7 @@ async function processWithGoogleSTTServiceAccount(buffer: Buffer, mimeType: stri
 }
 
 // 임시 STT 처리 함수 (Google API 실패 시 fallback용)
-async function mockSTTProcessing(buffer: Buffer, mimeType: string): Promise<string> {
+async function mockSTTProcessing(buffer: Buffer, _mimeType: string): Promise<string> {
   // 오디오 크기에 따른 모의 텍스트 생성
   const sizeKB = buffer.length / 1024;
 
