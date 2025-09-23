@@ -24,10 +24,22 @@ export default function SettingsPage() {
       action: () => router.push('/settings/version')
     },
     {
-      title: '데이터 관리',
-      description: '메모 백업 및 복원',
+      title: '데이터 다운로드',
+      description: '',
       icon: '💾',
-      action: () => console.log('데이터 관리')
+      action: () => router.push('/settings/download')
+    },
+    {
+      title: '개인정보처리방침',
+      description: '',
+      icon: '🔒',
+      action: () => router.push('/settings/privacy-policy')
+    },
+    {
+      title: '이용약관',
+      description: '',
+      icon: '📄',
+      action: () => router.push('/settings/terms-of-service')
     }
   ];
 
