@@ -14,8 +14,10 @@ interface MemoData {
   updated_at: string;
 }
 
+type RecordingStatus = 'idle' | 'recording' | 'processing' | 'completed';
+
 export default function VoiceMemoPage() {
-  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
   const [memos, setMemos] = useState<MemoData[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isLoadingMemos, setIsLoadingMemos] = useState(true);
@@ -137,7 +139,7 @@ export default function VoiceMemoPage() {
     fetchMemos(initUserId);
   }, []);
 
-  // 서버 STT로 오디오 청크 업로드 및 텍스트 인식
+  // Google Speech API로 오디오 업로드 및 텍스트 인식
   const uploadAudioChunk = async (audioBlob: Blob) => {
     try {
       console.log('📤 오디오 청크 업로드 시작:', { size: audioBlob.size, type: audioBlob.type });
@@ -158,13 +160,27 @@ export default function VoiceMemoPage() {
       console.log('📝 STT 결과 수신:', result);
 
       if (result.text) {
-        // 모바일 모드에서는 전체 텍스트로 교체 (누적하지 않음)
         setCurrentTranscript(result.text.trim());
         console.log('📄 텍스트 변환 완료:', result.text.trim());
+
+        // 즉시 저장 처리
+        console.log('💾 메모 자동 저장 시작...');
+        await saveMemo(result.text.trim());
+        console.log('✅ 메모 저장 완료');
+
+        // 완료 상태로 변경
+        setRecordingStatus('completed');
+
+        // 2초 후 초기 상태로 복구
+        setTimeout(() => {
+          setRecordingStatus('idle');
+          setCurrentTranscript('');
+        }, 2000);
       }
 
     } catch (error) {
       console.error('❌ STT 업로드 오류:', error);
+      setRecordingStatus('idle'); // 오류 시 초기 상태로 복구
     }
   };
 
@@ -209,69 +225,14 @@ export default function VoiceMemoPage() {
       const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
       const useServerSTT = isMobile || !speechSupport;
 
-      if (useServerSTT) {
-        console.log('🔄 서버 STT 모드 시작 (모바일 또는 Web Speech 미지원)');
-        console.log('📱 모바일 모드: 녹음 종료 후 일괄 전송으로 텍스트 변환');
-
-      } else {
-        console.log('🗣️ 데스크톱 Web Speech API 모드 시작');
-
-        // 데스크톱: Web Speech API 사용
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'ko-KR';
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = () => {
-          console.log('🎤 Web Speech Recognition 시작됨');
-        };
-
-        recognition.onresult = (event: any) => {
-          let transcript = '';
-          let finalTranscript = '';
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const result = event.results[i];
-            if (result.isFinal) {
-              finalTranscript += result[0].transcript;
-            } else {
-              transcript += result[0].transcript;
-            }
-          }
-
-          const currentText = finalTranscript || transcript;
-          console.log('📝 Web Speech 인식 텍스트:', currentText);
-          setCurrentTranscript(currentText);
-        };
-
-        recognition.onerror = (event: any) => {
-          console.error('❌ Web Speech Recognition 오류:', event.error);
-          if (event.error === 'not-allowed') {
-            alert('마이크 권한을 허용해주세요.');
-          }
-        };
-
-        recognition.onend = () => {
-          console.log('🛑 Web Speech Recognition 종료됨');
-        };
-
-        try {
-          recognition.start();
-          recognitionRef.current = recognition;
-          console.log('🎤 Web Speech Recognition 시작 명령 실행');
-        } catch (speechError) {
-          console.error('❌ Web Speech Recognition 시작 실패:', speechError);
-        }
-      }
+      // 모든 환경에서 Google Speech API 사용
+      console.log('🎤 Google Speech API 사용 모드');
 
       // MediaRecorder 시작 (1초 간격으로 dataavailable 이벤트 발생)
       mediaRecorder.start(1000);
-      setIsRecording(true);
+      setRecordingStatus('recording');
       setCurrentTranscript('');
-      console.log('✅ 녹음 시작 완료 - 모드:', useServerSTT ? '서버 STT (녹음 종료 후 일괄 처리)' : 'Web Speech API (실시간)');
+      console.log('✅ 녹음 시작 완룼 - Google Speech API 모드');
 
     } catch (error) {
       console.error('❌ 녹음 시작 중 오류:', error);
@@ -282,13 +243,6 @@ export default function VoiceMemoPage() {
   const stopRecording = async () => {
     console.log('🛑 음성 녹음 중지 시작...');
 
-    // 청크 업로드 타이머 중지 (실제로는 더 이상 사용하지 않음)
-    if (chunkTimerRef.current) {
-      clearInterval(chunkTimerRef.current);
-      chunkTimerRef.current = null;
-      console.log('⏰ 청크 업로드 타이머 중지');
-    }
-
     // MediaRecorder 중지
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
@@ -296,69 +250,35 @@ export default function VoiceMemoPage() {
       console.log('✅ MediaRecorder 중지 완료');
     }
 
-    // Web Speech Recognition 중지 (데스크톱에서만)
-    if (recognitionRef.current) {
-      (recognitionRef.current as any).stop();
-      console.log('✅ Web Speech Recognition 중지 완료');
-    }
+    // 처리 중 상태로 변경
+    setRecordingStatus('processing');
 
-    setIsRecording(false);
-
-    // 모바일/서버 STT 모드: 전체 녹음 파일을 한번에 처리
-    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-    const useServerSTT = isMobile || !speechSupport;
-
-    if (useServerSTT && audioChunksRef.current.length > 0) {
-      console.log('📱 모바일 모드: 전체 녹음 파일 일괄 처리 시작...');
-      setCurrentTranscript('음성을 텍스트로 변환하는 중입니다...');
+    // 녹음된 오디오 파일을 Google Speech API로 처리
+    if (audioChunksRef.current.length > 0) {
+      console.log('📤 녹음 완료 - Google Speech API로 텍스트 변환 시작...');
 
       const chunks = audioChunksRef.current.splice(0);
       const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
       const audioBlob = new Blob(chunks, { type: mimeType });
 
-      console.log('📤 전체 오디오 파일 업로드:', {
+      console.log('📤 오디오 파일 정보:', {
         size: audioBlob.size,
-        type: audioBlob.type,
-        duration: '전체 녹음'
+        type: audioBlob.type
       });
 
       if (audioBlob.size > 0) {
-        await uploadAudioChunk(audioBlob);
+        try {
+          // Google Speech API로 텍스트 변환 요청 (여기서 자동 저장도 처리됨)
+          await uploadAudioChunk(audioBlob);
+        } catch (error) {
+          console.error('❌ 텍스트 변환 오류:', error);
+          setRecordingStatus('idle'); // 오류 시 초기 상태로 복구
+        }
+      } else {
+        setRecordingStatus('idle'); // 녹음 데이터가 없으면 초기 상태로
       }
-
-      // 텍스트 변환 완료 대기
-      setTimeout(async () => {
-        console.log('📝 최종 인식된 텍스트:', currentTranscript);
-
-        // 음성 인식 결과를 데이터베이스에 저장
-        if (currentTranscript.trim() && currentTranscript !== '음성을 텍스트로 변환하는 중입니다...') {
-          console.log('💾 메모 저장 시작...');
-          await saveMemo(currentTranscript.trim());
-          console.log('✅ 메모 저장 완료');
-        } else {
-          console.log('⚠️ 저장할 텍스트가 없습니다');
-        }
-
-        setCurrentTranscript('');
-      }, 2000); // 2초 대기 후 저장 (서버 처리 시간 고려)
-
-    } else if (!useServerSTT) {
-      // 데스크톱 Web Speech API 모드
-      setTimeout(async () => {
-        console.log('📝 최종 인식된 텍스트:', currentTranscript);
-
-        // 음성 인식 결과를 데이터베이스에 저장
-        if (currentTranscript.trim()) {
-          console.log('💾 메모 저장 시작...');
-          await saveMemo(currentTranscript.trim());
-          console.log('✅ 메모 저장 완료');
-        } else {
-          console.log('⚠️ 저장할 텍스트가 없습니다');
-        }
-
-        setCurrentTranscript('');
-      }, 1000); // 1초 대기 후 저장
+    } else {
+      setRecordingStatus('idle'); // 녹음 데이터가 없으면 초기 상태로
     }
   };
 
@@ -383,7 +303,7 @@ export default function VoiceMemoPage() {
         </div>
 
         {/* Debug Information for Mobile Testing */}
-        {debugInfo && (
+        {/* {debugInfo && (
           <div className="bg-gray-800 rounded-lg p-4 mb-6">
             <h3 className="text-sm font-semibold mb-2 text-yellow-400">🔍 디버그 정보</h3>
             <div className="space-y-1 text-xs text-gray-300">
@@ -418,86 +338,39 @@ export default function VoiceMemoPage() {
               )}
             </div>
           </div>
-        )}
+        )} */
 
         {/* Recording Button */}
         <div className="flex justify-center mb-8">
           <button
-            onClick={isRecording ? stopRecording : startRecording}
+            onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
+            disabled={recordingStatus === 'processing' || recordingStatus === 'completed'}
             className={`w-32 h-32 rounded-full border-4 transition-all duration-200 ${
-              isRecording
+              recordingStatus === 'recording'
                 ? 'bg-red-600 border-red-400 animate-pulse'
+                : recordingStatus === 'processing'
+                ? 'bg-yellow-600 border-yellow-400 animate-spin'
+                : recordingStatus === 'completed'
+                ? 'bg-green-600 border-green-400'
                 : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
-            }`}
+            } ${(recordingStatus === 'processing' || recordingStatus === 'completed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center">
-              <div className="text-4xl mb-2">🎤</div>
+              <div className="text-4xl mb-2">
+                {recordingStatus === 'recording' ? '🎤' :
+                 recordingStatus === 'processing' ? '⏳' :
+                 recordingStatus === 'completed' ? '✅' : '🎤'}
+              </div>
               <div className="text-sm font-semibold">
-                {isRecording ? '중지' : '녹음'}
+                {recordingStatus === 'recording' ? '녹음 중...' :
+                 recordingStatus === 'processing' ? '처리 중...' :
+                 recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
               </div>
             </div>
           </button>
         </div>
 
-        {/* Current Recording Status */}
-        {isRecording && (
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold mb-2 text-red-400">🔴 녹음 중...</h3>
-            <div className="bg-gray-900 rounded p-3 min-h-[80px]">
-              <p className="text-gray-300">
-                {currentTranscript || '음성을 인식하고 있습니다...'}
-              </p>
-            </div>
-          </div>
-        )}
 
-        {/* Saved Memos */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold mb-4">
-            저장된 메모 ({memos.length})
-          </h2>
-
-          {isLoadingMemos ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg p-4">
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-full mb-1"></div>
-                    <div className="h-3 bg-gray-700 rounded w-3/4"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : memos.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">📝</div>
-              <p>아직 저장된 메모가 없습니다.</p>
-              <p className="text-sm">위의 녹음 버튼을 눌러 첫 번째 메모를 만들어보세요!</p>
-            </div>
-          ) : (
-            memos.map((memo) => (
-              <div key={memo.id} className="bg-gray-800 rounded-lg p-4 relative group">
-                <button
-                  onClick={() => deleteMemo(memo.id)}
-                  className="absolute top-2 right-2 w-8 h-8 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-sm"
-                  title="메모 삭제"
-                >
-                  ✕
-                </button>
-                <div className="flex items-start gap-3">
-                  <div className="text-blue-400 mt-1">📝</div>
-                  <div className="flex-1 pr-8">
-                    <div className="text-xs text-gray-500 mb-1">
-                      메모 #{memo.id} • {new Date(memo.created_at).toLocaleString('ko-KR')}
-                    </div>
-                    <p className="text-white leading-relaxed">{memo.content}</p>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
       </div>
     </div>
   );
