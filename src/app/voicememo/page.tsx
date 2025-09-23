@@ -23,6 +23,7 @@ export default function VoiceMemoPage() {
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isLoadingMemos, setIsLoadingMemos] = useState(true);
   const [userId, setUserId] = useState<string>('');
+  const [latestMemo, setLatestMemo] = useState<MemoData | null>(null);
   const [debugInfo, setDebugInfo] = useState<{
     userAgent: string;
     speechSupport: boolean;
@@ -30,10 +31,12 @@ export default function VoiceMemoPage() {
     isMobile: boolean;
     useServerSTT: boolean;
   } | null>(null);
+  const [dotCount, setDotCount] = useState(1);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<unknown>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const chunkTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const dotIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 메모 목록 조회 함수
   const fetchMemos = async (userIdParam: string) => {
@@ -43,6 +46,10 @@ export default function VoiceMemoPage() {
 
       if (result.success) {
         setMemos(result.data);
+        // 최신 메모 설정 (첫 번째 메모가 최신)
+        if (result.data && result.data.length > 0) {
+          setLatestMemo(result.data[0]);
+        }
       } else {
         console.error('Failed to fetch memos:', result.message);
       }
@@ -73,6 +80,9 @@ export default function VoiceMemoPage() {
 
       if (result.success) {
         console.log('메모 저장 성공:', result.data);
+        // 새로 저장된 메모를 최신 메모로 즉시 설정
+        const newMemo = result.data;
+        setLatestMemo(newMemo);
         // 메모 목록 새로고침
         await fetchMemos(userId);
       } else {
@@ -139,6 +149,28 @@ export default function VoiceMemoPage() {
     // 메모 목록 조회
     fetchMemos(initUserId);
   }, []);
+
+  // Dots 애니메이션 관리
+  useEffect(() => {
+    if (recordingStatus === 'processing') {
+      dotIntervalRef.current = setInterval(() => {
+        setDotCount(prev => prev === 3 ? 1 : prev + 1);
+      }, 500);
+    } else {
+      if (dotIntervalRef.current) {
+        clearInterval(dotIntervalRef.current);
+        dotIntervalRef.current = null;
+      }
+      setDotCount(1);
+    }
+
+    return () => {
+      if (dotIntervalRef.current) {
+        clearInterval(dotIntervalRef.current);
+        dotIntervalRef.current = null;
+      }
+    };
+  }, [recordingStatus]);
 
   // Google Speech API로 오디오 업로드 및 텍스트 인식
   const uploadAudioChunk = async (audioBlob: Blob) => {
@@ -315,7 +347,7 @@ export default function VoiceMemoPage() {
                 recordingStatus === 'recording'
                   ? 'bg-red-600 border-red-400 animate-pulse'
                   : recordingStatus === 'processing'
-                  ? 'bg-yellow-600 border-yellow-400 animate-spin'
+                  ? 'bg-yellow-600 border-yellow-400'
                   : recordingStatus === 'completed'
                   ? 'bg-green-600 border-green-400'
                   : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
@@ -329,12 +361,36 @@ export default function VoiceMemoPage() {
                 </div>
                 <div className="text-sm font-semibold">
                   {recordingStatus === 'recording' ? '녹음 중...' :
-                   recordingStatus === 'processing' ? '처리 중...' :
+                   recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
                    recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
                 </div>
               </div>
             </button>
           </div>
+
+          {/* 최근 메모 박스 */}
+          {latestMemo && (
+            <div className="mt-8 px-4">
+              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-300">최근 메모</h3>
+                  <span className="text-xs text-gray-500">
+                    {new Date(latestMemo.created_at).toLocaleString('ko-KR', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+                <div className="text-sm text-white leading-relaxed">
+                  {latestMemo.content.length > 100
+                    ? `${latestMemo.content.substring(0, 100)}...`
+                    : latestMemo.content}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

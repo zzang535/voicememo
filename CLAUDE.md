@@ -15,12 +15,14 @@ When performing version updates (`version up` command):
 2. **Update version in service info page**: Update the version display in the service info page (`src/app/settings/version/page.tsx`) to include:
    - New version number in both places (앱 버전 section and 서비스 정보 section)
    - One-sentence description of what was added/changed in this version (앱 버전 section)
+   - Update "마지막 업데이트" date with current date and time (YYYY년 MM월 DD일 HH:MM format)
 3. **Commit with proper message** including version details
 4. **Push to remote repository**
 
 ### Version Update Locations
 - `src/app/settings/version/page.tsx`: Update version in 앱 버전 section (v0.x.0) and 서비스 정보 section
 - Update the description text in 앱 버전 section with changes summary
+- Update "마지막 업데이트" date with exact timestamp when version is updated
 
 ### Example
 - v0.9.0: "설정 메뉴에 고객센터, 개인정보처리방침, 이용약관 페이지 추가"

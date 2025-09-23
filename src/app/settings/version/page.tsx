@@ -17,12 +17,12 @@ export default function VersionPage() {
           <div className="text-center">
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-sm font-semibold text-gray-300 mb-4">앱 버전</h3>
-              <p className="text-3xl font-bold text-blue-400 mb-2">v0.9.0</p>
+              <p className="text-3xl font-bold text-blue-400 mb-2">v1.0.0</p>
               <p className="text-sm text-gray-400 mb-4">
-                설정 메뉴에 고객센터, 개인정보처리방침, 이용약관 페이지 추가
+                녹음 처리 중 UI 개선 및 최근 메모 미리보기 기능 추가
               </p>
               <div className="text-xs text-gray-500">
-                마지막 업데이트: 2024년 12월
+                마지막 업데이트: 2025년 09월 23일 17:06
               </div>
             </div>
           </div>
@@ -42,7 +42,7 @@ export default function VersionPage() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-white">버전</span>
-                  <span className="text-sm text-gray-300">v0.9.0</span>
+                  <span className="text-sm text-gray-300">v1.0.0</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-white">지원 브라우저</span>
@@ -72,14 +72,6 @@ export default function VersionPage() {
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
                   음성 메모 관리 및 검색
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span>
-                  로컬 저장소 기반 데이터 보관
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span>
-                  음성 메모 재생 및 편집
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
