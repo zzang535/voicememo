@@ -1,12 +1,15 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 
 export default function PrivacyPolicyPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-20">
-      <Header title="개인정보처리방침" />
+      <Header title="개인정보처리방침" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-20 px-4 max-w-4xl mx-auto">
         <div className="space-y-6">
@@ -164,11 +167,12 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="bg-gray-800 p-4 rounded-lg">
               <p className="text-sm text-gray-300">▶ 개인정보 보호책임자</p>
+              <p className="text-sm text-gray-300">- 회사명: 싱잉버드</p>
               <p className="text-sm text-gray-300">- 서비스명: Voice Memo</p>
               <p className="text-sm text-gray-300">- 담당부서: 개발팀</p>
               <p className="text-sm text-gray-300">- 담당자: 황윤</p>
-              <p className="text-sm text-gray-300">- 이메일: hwangyoon@example.com</p>
-              <p className="text-sm text-gray-300">- 전화번호: 010-0000-0000</p>
+              <p className="text-sm text-gray-300">- 이메일: singingbird535@gmail.com</p>
+              <p className="text-sm text-gray-300">- 전화번호: 010-2849-0490</p>
             </div>
           </div>
 

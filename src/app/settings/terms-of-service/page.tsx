@@ -1,12 +1,15 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 
 export default function TermsOfServicePage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-20">
-      <Header title="이용약관" />
+      <Header title="이용약관" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-20 px-4 max-w-4xl mx-auto">
         <div className="space-y-6">
@@ -193,11 +196,12 @@ export default function TermsOfServicePage() {
               서비스 관련 문의사항이 있을 경우 아래로 연락주시기 바랍니다:
             </p>
             <div className="bg-gray-800 p-4 rounded-lg">
+              <p className="text-sm text-gray-300">- 회사명: 싱잉버드</p>
               <p className="text-sm text-gray-300">- 서비스명: Voice Memo</p>
               <p className="text-sm text-gray-300">- 담당부서: 개발팀</p>
               <p className="text-sm text-gray-300">- 담당자: 황윤</p>
-              <p className="text-sm text-gray-300">- 이메일: hwangyoon@example.com</p>
-              <p className="text-sm text-gray-300">- 전화번호: 010-0000-0000</p>
+              <p className="text-sm text-gray-300">- 이메일: singingbird535@gmail.com</p>
+              <p className="text-sm text-gray-300">- 전화번호: 010-2849-0490</p>
             </div>
           </div>
 

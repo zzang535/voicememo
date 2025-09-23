@@ -18,7 +18,7 @@ export default function SettingsPage() {
 
   const settingsItems = [
     {
-      title: '버전 정보',
+      title: '서비스 정보',
       description: '',
       icon: 'ℹ️',
       action: () => router.push('/settings/version')
@@ -40,6 +40,12 @@ export default function SettingsPage() {
       description: '',
       icon: '📄',
       action: () => router.push('/settings/terms-of-service')
+    },
+    {
+      title: '고객센터',
+      description: '',
+      icon: '🎧',
+      action: () => router.push('/settings/customer-support')
     }
   ];
 
