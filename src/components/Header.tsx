@@ -5,12 +5,27 @@ interface HeaderProps {
   subtitle?: string;
   showDisconnect?: boolean;
   onDisconnect?: () => void;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
 }
 
-export default function Header({ title, subtitle, showDisconnect = false, onDisconnect }: HeaderProps) {
+export default function Header({ title, subtitle, showDisconnect = false, onDisconnect, showBackButton = false, onBackClick }: HeaderProps) {
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700">
-      <div className="flex items-center justify-center px-4 py-3 min-h-[60px]">
+      <div className="flex items-center justify-center px-4 py-3 min-h-[60px] relative">
+        {/* Back button (if needed) */}
+        {showBackButton && onBackClick && (
+          <button
+            onClick={onBackClick}
+            className="absolute left-4 w-10 h-10 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center"
+            title="뒤로가기"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
         {/* Title or connection info */}
         <div className="flex items-center justify-center">
           {subtitle ? (

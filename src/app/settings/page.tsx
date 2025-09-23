@@ -18,8 +18,8 @@ export default function SettingsPage() {
 
   const settingsItems = [
     {
-      title: '앱 정보',
-      description: '버전 정보 및 개발자 연락처',
+      title: '버전 정보',
+      description: '',
       icon: 'ℹ️',
       action: () => router.push('/settings/version')
     },

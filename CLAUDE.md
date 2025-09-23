@@ -31,3 +31,11 @@ When performing version updates (`version up` command):
 - v0.3.0: "Implemented real-time collaboration features"
 
 This ensures users can see what's new in each version directly in the app interface.
+
+## Build Rules
+
+**DO NOT run `npm run build` automatically**
+- Only run build when explicitly requested by the user
+- The development machine has memory constraints that cause build slowdowns
+- Focus on code changes and commit/push without automatic build verification
+- User will manually run builds when needed
