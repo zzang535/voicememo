@@ -302,43 +302,6 @@ export default function VoiceMemoPage() {
           )}
         </div>
 
-        {/* Debug Information for Mobile Testing */}
-        {/* {debugInfo && (
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold mb-2 text-yellow-400">🔍 디버그 정보</h3>
-            <div className="space-y-1 text-xs text-gray-300">
-              <div>
-                <span className="text-gray-500">환경:</span> {debugInfo.isMobile ? '📱 모바일' : '💻 데스크톱'}
-              </div>
-              <div>
-                <span className="text-gray-500">STT 모드:</span>
-                <span className={debugInfo.useServerSTT ? 'text-blue-400' : 'text-green-400'}>
-                  {debugInfo.useServerSTT ? ' 🔄 서버 STT' : ' 🗣️ Web Speech API'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Speech API:</span>
-                <span className={debugInfo.speechSupport ? 'text-green-400' : 'text-red-400'}>
-                  {debugInfo.speechSupport ? ' ✅ 지원됨' : ' ❌ 지원되지 않음'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">MediaDevices:</span>
-                <span className={debugInfo.mediaDevicesSupport ? 'text-green-400' : 'text-red-400'}>
-                  {debugInfo.mediaDevicesSupport ? ' ✅ 지원됨' : ' ❌ 지원되지 않음'}
-                </span>
-              </div>
-              <div className="text-gray-500 text-xs truncate">
-                브라우저: {debugInfo.userAgent.split(' ').slice(-2).join(' ')}
-              </div>
-              {debugInfo.useServerSTT && (
-                <div className="text-xs text-blue-300 mt-2 p-2 bg-blue-900/20 rounded">
-                  📱 녹음 종료 후 전체 오디오 파일을 서버로 전송하여 텍스트 변환
-                </div>
-              )}
-            </div>
-          </div>
-        )} */
 
         {/* Recording Button */}
         <div className="flex justify-center mb-8">
