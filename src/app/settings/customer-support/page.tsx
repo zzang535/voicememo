@@ -78,7 +78,7 @@ export default function CustomerSupportPage() {
                   Q. 음성 메모를 백업하고 싶어요.
                 </h4>
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  A. 설정 메뉴의 '데이터 다운로드' 기능을 이용해 음성 메모 데이터를 JSON 파일로 다운로드할 수 있습니다. 이 파일을 안전한 곳에 보관하시면 백업 용도로 활용하실 수 있습니다.
+                  A. 설정 메뉴의 &apos;데이터 다운로드&apos; 기능을 이용해 음성 메모 데이터를 JSON 파일로 다운로드할 수 있습니다. 이 파일을 안전한 곳에 보관하시면 백업 용도로 활용하실 수 있습니다.
                 </p>
               </div>
 

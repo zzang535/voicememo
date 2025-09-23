@@ -17,7 +17,6 @@ interface MemoData {
 export default function DownloadPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('');
-  const [memos, setMemos] = useState<MemoData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {

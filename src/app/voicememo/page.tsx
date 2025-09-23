@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -19,23 +17,11 @@ type RecordingStatus = 'idle' | 'recording' | 'processing' | 'completed';
 
 export default function VoiceMemoPage() {
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
-  const [memos, setMemos] = useState<MemoData[]>([]);
-  const [currentTranscript, setCurrentTranscript] = useState('');
-  const [isLoadingMemos, setIsLoadingMemos] = useState(true);
   const [userId, setUserId] = useState<string>('');
   const [latestMemo, setLatestMemo] = useState<MemoData | null>(null);
-  const [debugInfo, setDebugInfo] = useState<{
-    userAgent: string;
-    speechSupport: boolean;
-    mediaDevicesSupport: boolean;
-    isMobile: boolean;
-    useServerSTT: boolean;
-  } | null>(null);
   const [dotCount, setDotCount] = useState(1);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recognitionRef = useRef<unknown>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
-  const chunkTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dotIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 메모 목록 조회 함수
@@ -45,7 +31,6 @@ export default function VoiceMemoPage() {
       const result = await response.json();
 
       if (result.success) {
-        setMemos(result.data);
         // 최신 메모 설정 (첫 번째 메모가 최신)
         if (result.data && result.data.length > 0) {
           setLatestMemo(result.data[0]);
@@ -55,8 +40,6 @@ export default function VoiceMemoPage() {
       }
     } catch (error) {
       console.error('Error fetching memos:', error);
-    } finally {
-      setIsLoadingMemos(false);
     }
   };
 
@@ -93,28 +76,6 @@ export default function VoiceMemoPage() {
     }
   };
 
-  // 메모 삭제 함수
-  const deleteMemo = async (memoId: number) => {
-    if (!userId) return;
-
-    try {
-      const response = await fetch(`/api/memo?id=${memoId}&userId=${encodeURIComponent(userId)}`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        console.log('메모 삭제 성공');
-        // 메모 목록 새로고침
-        await fetchMemos(userId);
-      } else {
-        console.error('Failed to delete memo:', result.message);
-      }
-    } catch (error) {
-      console.error('Error deleting memo:', error);
-    }
-  };
 
   // Initialize user ID and fetch data on component mount
   useEffect(() => {
@@ -123,28 +84,6 @@ export default function VoiceMemoPage() {
     setUserId(initUserId);
     console.log('사용자 ID 초기화:', initUserId);
 
-    // 디버그 정보 설정
-    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-    const mediaDevicesSupport = 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices;
-
-    // 모바일 환경에서는 서버 STT 사용, 데스크톱에서는 Web Speech API 사용
-    const useServerSTT = isMobile || !speechSupport;
-
-    setDebugInfo({
-      userAgent: navigator.userAgent,
-      speechSupport,
-      mediaDevicesSupport,
-      isMobile,
-      useServerSTT
-    });
-
-    console.log('🔍 디버그 정보:', {
-      isMobile,
-      speechSupport,
-      mediaDevicesSupport,
-      userAgent: navigator.userAgent
-    });
 
     // 메모 목록 조회
     fetchMemos(initUserId);
@@ -193,7 +132,6 @@ export default function VoiceMemoPage() {
       console.log('📝 STT 결과 수신:', result);
 
       if (result.text) {
-        setCurrentTranscript(result.text.trim());
         console.log('📄 텍스트 변환 완료:', result.text.trim());
 
         // 즉시 저장 처리
@@ -207,7 +145,6 @@ export default function VoiceMemoPage() {
         // 2초 후 초기 상태로 복구
         setTimeout(() => {
           setRecordingStatus('idle');
-          setCurrentTranscript('');
         }, 2000);
       }
 
@@ -254,9 +191,6 @@ export default function VoiceMemoPage() {
         }
       };
 
-      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-      const useServerSTT = isMobile || !speechSupport;
 
       // 모든 환경에서 Google Speech API 사용
       console.log('🎤 Google Speech API 사용 모드');
@@ -264,7 +198,6 @@ export default function VoiceMemoPage() {
       // MediaRecorder 시작 (1초 간격으로 dataavailable 이벤트 발생)
       mediaRecorder.start(1000);
       setRecordingStatus('recording');
-      setCurrentTranscript('');
       console.log('✅ 녹음 시작 완룼 - Google Speech API 모드');
 
     } catch (error) {

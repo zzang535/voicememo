@@ -18,7 +18,7 @@ export default function TermsOfServicePage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">1. 목적</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              이 약관은 Voice Memo(이하 "서비스")의 이용조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.
+              이 약관은 Voice Memo(이하 &quot;서비스&quot;)의 이용조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </div>
 

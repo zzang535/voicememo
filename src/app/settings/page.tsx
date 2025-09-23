@@ -1,20 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { getUserId, getShortUserId } from '@/utils/userUtils';
 
 export default function SettingsPage() {
-  const [userId, setUserId] = useState<string>('');
   const router = useRouter();
-
-  // 컴포넌트 마운트 시 사용자 ID 가져오기
-  useState(() => {
-    const initUserId = getUserId();
-    setUserId(initUserId);
-  });
 
   const settingsItems = [
     {

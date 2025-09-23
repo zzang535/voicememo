@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">1. 개인정보의 처리 목적</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              Voice Memo(이하 "서비스")는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 개인정보 보호법 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
+              Voice Memo(이하 &quot;서비스&quot;)는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 개인정보 보호법 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
               <li>음성 메모 기록 및 관리 서비스 제공</li>
