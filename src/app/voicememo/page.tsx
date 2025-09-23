@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
+import BottomNavigation from '@/components/BottomNavigation';
 import { getUserId, getShortUserId } from '@/utils/userUtils';
 
 interface MemoData {
@@ -283,58 +284,61 @@ export default function VoiceMemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-950 text-white pb-20">
       <Header title="Voice Memo" />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">음성 메모</h1>
-          <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
+      {/* Main Content - Centered Vertically */}
+      <div className="flex items-center justify-center min-h-screen pt-20 pb-20">
+        <div className="text-center px-4 max-w-md mx-auto">
+          {/* Title Section */}
+          <div className="mb-12">
+            <h1 className="text-3xl font-bold mb-4">음성 메모</h1>
+            <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
 
-          {/* User ID Display */}
-          {userId && (
-            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-gray-300">
-                사용자 ID: {getShortUserId(userId)}
-              </span>
-            </div>
-          )}
-        </div>
-
-
-        {/* Recording Button */}
-        <div className="flex justify-center mb-8">
-          <button
-            onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
-            disabled={recordingStatus === 'processing' || recordingStatus === 'completed'}
-            className={`w-32 h-32 rounded-full border-4 transition-all duration-200 ${
-              recordingStatus === 'recording'
-                ? 'bg-red-600 border-red-400 animate-pulse'
-                : recordingStatus === 'processing'
-                ? 'bg-yellow-600 border-yellow-400 animate-spin'
-                : recordingStatus === 'completed'
-                ? 'bg-green-600 border-green-400'
-                : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
-            } ${(recordingStatus === 'processing' || recordingStatus === 'completed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <div className="flex flex-col items-center">
-              <div className="text-4xl mb-2">
-                {recordingStatus === 'recording' ? '🎤' :
-                 recordingStatus === 'processing' ? '⏳' :
-                 recordingStatus === 'completed' ? '✅' : '🎤'}
+            {/* User ID Display */}
+            {userId && (
+              <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-gray-300">
+                  사용자 ID: {getShortUserId(userId)}
+                </span>
               </div>
-              <div className="text-sm font-semibold">
-                {recordingStatus === 'recording' ? '녹음 중...' :
-                 recordingStatus === 'processing' ? '처리 중...' :
-                 recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
+            )}
+          </div>
+
+          {/* Recording Button */}
+          <div className="flex justify-center">
+            <button
+              onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
+              disabled={recordingStatus === 'processing' || recordingStatus === 'completed'}
+              className={`w-40 h-40 rounded-full border-4 transition-all duration-200 ${
+                recordingStatus === 'recording'
+                  ? 'bg-red-600 border-red-400 animate-pulse'
+                  : recordingStatus === 'processing'
+                  ? 'bg-yellow-600 border-yellow-400 animate-spin'
+                  : recordingStatus === 'completed'
+                  ? 'bg-green-600 border-green-400'
+                  : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
+              } ${(recordingStatus === 'processing' || recordingStatus === 'completed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <div className="flex flex-col items-center">
+                <div className="text-5xl mb-3">
+                  {recordingStatus === 'recording' ? '🎤' :
+                   recordingStatus === 'processing' ? '⏳' :
+                   recordingStatus === 'completed' ? '✅' : '🎤'}
+                </div>
+                <div className="text-sm font-semibold">
+                  {recordingStatus === 'recording' ? '녹음 중...' :
+                   recordingStatus === 'processing' ? '처리 중...' :
+                   recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          </div>
         </div>
-
-
       </div>
+
+      <BottomNavigation />
     </div>
   );
 }

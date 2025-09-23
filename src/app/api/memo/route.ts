@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/db';
 
-// GET: 사용자의 메모 목록 조회
+// GET: 사용자의 메모 목록 조회 또는 개별 메모 조회
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const memoId = searchParams.get('id');
 
     if (!userId) {
       return NextResponse.json({
@@ -14,15 +15,42 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const result = await executeQuery(
-      'SELECT * FROM memo WHERE user_id = ? ORDER BY created_at DESC',
-      [userId]
-    );
+    if (memoId) {
+      // 개별 메모 조회
+      const result = await executeQuery(
+        'SELECT * FROM memo WHERE id = ? AND user_id = ?',
+        [memoId, userId]
+      ) as Array<{
+        id: number;
+        user_id: string;
+        content: string;
+        created_at: string;
+        updated_at: string;
+      }>;
 
-    return NextResponse.json({
-      success: true,
-      data: result
-    });
+      if (result.length === 0) {
+        return NextResponse.json({
+          success: false,
+          message: 'Memo not found'
+        }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: result[0]
+      });
+    } else {
+      // 메모 목록 조회
+      const result = await executeQuery(
+        'SELECT * FROM memo WHERE user_id = ? ORDER BY created_at DESC',
+        [userId]
+      );
+
+      return NextResponse.json({
+        success: true,
+        data: result
+      });
+    }
 
   } catch (error) {
     console.error('Failed to fetch memos:', error);
@@ -77,6 +105,55 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Failed to save memo',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// PUT: 메모 수정
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, userId, content } = body;
+
+    if (!id || !userId || !content) {
+      return NextResponse.json({
+        success: false,
+        message: 'Memo ID, User ID and content are required'
+      }, { status: 400 });
+    }
+
+    if (content.trim().length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Content cannot be empty'
+      }, { status: 400 });
+    }
+
+    // 해당 사용자의 메모인지 확인 후 수정
+    const result = await executeQuery(
+      'UPDATE memo SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [content.trim(), id, userId]
+    ) as { affectedRows: number };
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Memo not found or unauthorized'
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Memo updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Failed to update memo:', error);
+
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to update memo',
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
