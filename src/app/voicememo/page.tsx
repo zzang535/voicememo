@@ -158,11 +158,9 @@ export default function VoiceMemoPage() {
       console.log('📝 STT 결과 수신:', result);
 
       if (result.text) {
-        setCurrentTranscript(prev => {
-          const newText = (prev + ' ' + result.text).trim();
-          console.log('📄 누적 텍스트 업데이트:', newText);
-          return newText;
-        });
+        // 모바일 모드에서는 전체 텍스트로 교체 (누적하지 않음)
+        setCurrentTranscript(result.text.trim());
+        console.log('📄 텍스트 변환 완료:', result.text.trim());
       }
 
     } catch (error) {
@@ -213,21 +211,7 @@ export default function VoiceMemoPage() {
 
       if (useServerSTT) {
         console.log('🔄 서버 STT 모드 시작 (모바일 또는 Web Speech 미지원)');
-
-        // 모바일/서버 STT: 3초마다 청크 업로드
-        chunkTimerRef.current = setInterval(async () => {
-          if (audioChunksRef.current.length === 0) return;
-
-          // 현재까지 수집된 청크들을 하나의 Blob으로 합치기
-          const chunks = audioChunksRef.current.splice(0); // 모든 청크 가져오고 비우기
-          const audioBlob = new Blob(chunks, { type: mimeType });
-
-          if (audioBlob.size > 0) {
-            await uploadAudioChunk(audioBlob);
-          }
-        }, 3000); // 3초마다 업로드
-
-        console.log('⏰ 3초 간격 청크 업로드 타이머 시작');
+        console.log('📱 모바일 모드: 녹음 종료 후 일괄 전송으로 텍스트 변환');
 
       } else {
         console.log('🗣️ 데스크톱 Web Speech API 모드 시작');
@@ -287,7 +271,7 @@ export default function VoiceMemoPage() {
       mediaRecorder.start(1000);
       setIsRecording(true);
       setCurrentTranscript('');
-      console.log('✅ 녹음 시작 완료 - 모드:', useServerSTT ? '서버 STT' : 'Web Speech API');
+      console.log('✅ 녹음 시작 완료 - 모드:', useServerSTT ? '서버 STT (녹음 종료 후 일괄 처리)' : 'Web Speech API (실시간)');
 
     } catch (error) {
       console.error('❌ 녹음 시작 중 오류:', error);
@@ -298,7 +282,7 @@ export default function VoiceMemoPage() {
   const stopRecording = async () => {
     console.log('🛑 음성 녹음 중지 시작...');
 
-    // 청크 업로드 타이머 중지
+    // 청크 업로드 타이머 중지 (실제로는 더 이상 사용하지 않음)
     if (chunkTimerRef.current) {
       clearInterval(chunkTimerRef.current);
       chunkTimerRef.current = null;
@@ -320,33 +304,62 @@ export default function VoiceMemoPage() {
 
     setIsRecording(false);
 
-    // 서버 STT 모드에서 마지막 남은 청크 처리
-    if (audioChunksRef.current.length > 0) {
-      console.log('📤 마지막 남은 청크 업로드 처리...');
+    // 모바일/서버 STT 모드: 전체 녹음 파일을 한번에 처리
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const speechSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    const useServerSTT = isMobile || !speechSupport;
+
+    if (useServerSTT && audioChunksRef.current.length > 0) {
+      console.log('📱 모바일 모드: 전체 녹음 파일 일괄 처리 시작...');
+      setCurrentTranscript('음성을 텍스트로 변환하는 중입니다...');
+
       const chunks = audioChunksRef.current.splice(0);
       const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
       const audioBlob = new Blob(chunks, { type: mimeType });
 
+      console.log('📤 전체 오디오 파일 업로드:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+        duration: '전체 녹음'
+      });
+
       if (audioBlob.size > 0) {
         await uploadAudioChunk(audioBlob);
       }
+
+      // 텍스트 변환 완료 대기
+      setTimeout(async () => {
+        console.log('📝 최종 인식된 텍스트:', currentTranscript);
+
+        // 음성 인식 결과를 데이터베이스에 저장
+        if (currentTranscript.trim() && currentTranscript !== '음성을 텍스트로 변환하는 중입니다...') {
+          console.log('💾 메모 저장 시작...');
+          await saveMemo(currentTranscript.trim());
+          console.log('✅ 메모 저장 완료');
+        } else {
+          console.log('⚠️ 저장할 텍스트가 없습니다');
+        }
+
+        setCurrentTranscript('');
+      }, 2000); // 2초 대기 후 저장 (서버 처리 시간 고려)
+
+    } else if (!useServerSTT) {
+      // 데스크톱 Web Speech API 모드
+      setTimeout(async () => {
+        console.log('📝 최종 인식된 텍스트:', currentTranscript);
+
+        // 음성 인식 결과를 데이터베이스에 저장
+        if (currentTranscript.trim()) {
+          console.log('💾 메모 저장 시작...');
+          await saveMemo(currentTranscript.trim());
+          console.log('✅ 메모 저장 완료');
+        } else {
+          console.log('⚠️ 저장할 텍스트가 없습니다');
+        }
+
+        setCurrentTranscript('');
+      }, 1000); // 1초 대기 후 저장
     }
-
-    // 텍스트 인식 완료 대기 (서버 STT의 경우 약간의 지연 고려)
-    setTimeout(async () => {
-      console.log('📝 최종 인식된 텍스트:', currentTranscript);
-
-      // 음성 인식 결과를 데이터베이스에 저장
-      if (currentTranscript.trim()) {
-        console.log('💾 메모 저장 시작...');
-        await saveMemo(currentTranscript.trim());
-        console.log('✅ 메모 저장 완료');
-      } else {
-        console.log('⚠️ 저장할 텍스트가 없습니다');
-      }
-
-      setCurrentTranscript('');
-    }, 1000); // 1초 대기 후 저장
   };
 
   return (
@@ -400,7 +413,7 @@ export default function VoiceMemoPage() {
               </div>
               {debugInfo.useServerSTT && (
                 <div className="text-xs text-blue-300 mt-2 p-2 bg-blue-900/20 rounded">
-                  📤 3초마다 서버로 오디오 청크 전송하여 텍스트 변환
+                  📱 녹음 종료 후 전체 오디오 파일을 서버로 전송하여 텍스트 변환
                 </div>
               )}
             </div>
