@@ -14,7 +14,7 @@ interface MemoData {
   updated_at: string;
 }
 
-type RecordingStatus = 'idle' | 'recording' | 'processing' | 'completed';
+type RecordingStatus = 'idle' | 'recording' | 'processing' | 'completed' | 'failed';
 
 export default function VoiceMemoPage() {
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
@@ -22,13 +22,12 @@ export default function VoiceMemoPage() {
   const [latestMemo, setLatestMemo] = useState<MemoData | null>(null);
   const [dotCount, setDotCount] = useState(1);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
-  const [showTimeWarning, setShowTimeWarning] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const dotIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 모든 타이머 정리 함수
   const clearAllTimers = () => {
@@ -36,16 +35,15 @@ export default function VoiceMemoPage() {
       clearTimeout(recordingTimerRef.current);
       recordingTimerRef.current = null;
     }
-    if (warningTimerRef.current) {
-      clearTimeout(warningTimerRef.current);
-      warningTimerRef.current = null;
-    }
     if (countdownTimerRef.current) {
-      clearInterval(countdownTimerRef.current);
+      clearTimeout(countdownTimerRef.current);
       countdownTimerRef.current = null;
     }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
     setRemainingTime(null);
-    setShowTimeWarning(false);
   };
 
   // 자동 정지 함수
@@ -172,7 +170,7 @@ export default function VoiceMemoPage() {
       const result = await response.json();
       console.log('📝 STT 결과 수신:', result);
 
-      if (result.text) {
+      if (result.text && result.text.trim()) {
         console.log('📄 텍스트 변환 완료:', result.text.trim());
 
         // 즉시 저장 처리
@@ -187,11 +185,28 @@ export default function VoiceMemoPage() {
         setTimeout(() => {
           setRecordingStatus('idle');
         }, 2000);
+      } else {
+        console.log('❌ STT 결과가 없음 - 실패 처리');
+
+        // 실패 상태로 변경
+        setRecordingStatus('failed');
+
+        // 3초 후 초기 상태로 복구
+        setTimeout(() => {
+          setRecordingStatus('idle');
+        }, 3000);
       }
 
     } catch (error) {
       console.error('❌ STT 업로드 오류:', error);
-      setRecordingStatus('idle'); // 오류 시 초기 상태로 복구
+
+      // 실패 상태로 변경
+      setRecordingStatus('failed');
+
+      // 3초 후 초기 상태로 복구
+      setTimeout(() => {
+        setRecordingStatus('idle');
+      }, 3000);
     }
   };
 
@@ -242,19 +257,18 @@ export default function VoiceMemoPage() {
       console.log('✅ 녹음 시작 완료 - Google Speech API 모드');
 
       // 타이머 설정
-      // 35초 후 경고 메시지 표시
-      warningTimerRef.current = setTimeout(() => {
-        setShowTimeWarning(true);
-        console.log('⚠️ 녹음 시간 경고 - 15초 후 자동 종료');
-      }, RECORDING_POLICY.WARNING_TIME);
-
-      // 45초 후 카운트다운 시작
+      // 20초 후 10초 카운트다운 시작
       countdownTimerRef.current = setTimeout(() => {
-        setRemainingTime(5);
-        const countdown = setInterval(() => {
+        setRemainingTime(10);
+        console.log('⚠️ 10초 카운트다운 시작');
+
+        countdownIntervalRef.current = setInterval(() => {
           setRemainingTime(prev => {
             if (prev === null || prev <= 1) {
-              clearInterval(countdown);
+              if (countdownIntervalRef.current) {
+                clearInterval(countdownIntervalRef.current);
+                countdownIntervalRef.current = null;
+              }
               return null;
             }
             return prev - 1;
@@ -262,7 +276,7 @@ export default function VoiceMemoPage() {
         }, 1000);
       }, RECORDING_POLICY.COUNTDOWN_START_TIME);
 
-      // 50초 후 자동 정지
+      // 30초 후 자동 정지
       recordingTimerRef.current = setTimeout(() => {
         autoStopRecording();
       }, RECORDING_POLICY.MAX_RECORDING_DURATION);
@@ -328,20 +342,11 @@ export default function VoiceMemoPage() {
           <h1 className="text-3xl font-bold mb-4">음성 메모</h1>
           <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
 
-          {/* 시간 경고 메시지 */}
-          {showTimeWarning && (
-            <div className="mt-4 px-4 py-2 bg-yellow-900/50 border border-yellow-600 rounded-lg">
-              <p className="text-yellow-300 text-sm">
-                {RECORDING_MESSAGES.WARNING}
-              </p>
-            </div>
-          )}
-
           {/* 카운트다운 표시 */}
           {remainingTime !== null && (
             <div className="mt-4 px-4 py-2 bg-red-900/50 border border-red-600 rounded-lg">
               <p className="text-red-300 text-sm font-semibold">
-                {remainingTime}초 후 자동 종료
+                {remainingTime}초 후 자동 종료됩니다
               </p>
             </div>
           )}
@@ -361,7 +366,7 @@ export default function VoiceMemoPage() {
         <div className="flex justify-center mb-8">
           <button
             onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
-            disabled={recordingStatus === 'processing' || recordingStatus === 'completed'}
+            disabled={recordingStatus === 'processing' || recordingStatus === 'completed' || recordingStatus === 'failed'}
             className={`w-40 h-40 rounded-full border-4 transition-all duration-200 ${
               recordingStatus === 'recording'
                 ? 'bg-red-600 border-red-400 animate-pulse'
@@ -369,19 +374,23 @@ export default function VoiceMemoPage() {
                 ? 'bg-yellow-600 border-yellow-400'
                 : recordingStatus === 'completed'
                 ? 'bg-green-600 border-green-400'
+                : recordingStatus === 'failed'
+                ? 'bg-red-800 border-red-500'
                 : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
-            } ${(recordingStatus === 'processing' || recordingStatus === 'completed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${(recordingStatus === 'processing' || recordingStatus === 'completed' || recordingStatus === 'failed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center">
               <div className="text-5xl mb-3">
                 {recordingStatus === 'recording' ? '🎤' :
                  recordingStatus === 'processing' ? '⏳' :
-                 recordingStatus === 'completed' ? '✅' : '🎤'}
+                 recordingStatus === 'completed' ? '✅' :
+                 recordingStatus === 'failed' ? '❌' : '🎤'}
               </div>
               <div className="text-sm font-semibold">
                 {recordingStatus === 'recording' ? '녹음 중...' :
                  recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
-                 recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
+                 recordingStatus === 'completed' ? '완료!' :
+                 recordingStatus === 'failed' ? '실패' : '녹음 시작'}
               </div>
             </div>
           </button>
