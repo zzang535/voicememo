@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { getUserId, getShortUserId } from '@/utils/userUtils';
+import { RECORDING_POLICY, RECORDING_MESSAGES } from '@/config/recordingPolicy';
 
 interface MemoData {
   id: number;
@@ -20,9 +21,38 @@ export default function VoiceMemoPage() {
   const [userId, setUserId] = useState<string>('');
   const [latestMemo, setLatestMemo] = useState<MemoData | null>(null);
   const [dotCount, setDotCount] = useState(1);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const dotIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 모든 타이머 정리 함수
+  const clearAllTimers = () => {
+    if (recordingTimerRef.current) {
+      clearTimeout(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (warningTimerRef.current) {
+      clearTimeout(warningTimerRef.current);
+      warningTimerRef.current = null;
+    }
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setRemainingTime(null);
+    setShowTimeWarning(false);
+  };
+
+  // 자동 정지 함수
+  const autoStopRecording = async () => {
+    console.log('⏰ 최대 녹음 시간 도달 - 자동 정지 실행');
+    await stopRecording();
+  };
 
   // 메모 목록 조회 함수
   const fetchMemos = async (userIdParam: string) => {
@@ -111,6 +141,17 @@ export default function VoiceMemoPage() {
     };
   }, [recordingStatus]);
 
+  // 컴포넌트 언마운트 시 모든 타이머 정리
+  useEffect(() => {
+    return () => {
+      clearAllTimers();
+      if (dotIntervalRef.current) {
+        clearInterval(dotIntervalRef.current);
+        dotIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   // Google Speech API로 오디오 업로드 및 텍스트 인식
   const uploadAudioChunk = async (audioBlob: Blob) => {
     try {
@@ -198,7 +239,33 @@ export default function VoiceMemoPage() {
       // MediaRecorder 시작 (1초 간격으로 dataavailable 이벤트 발생)
       mediaRecorder.start(1000);
       setRecordingStatus('recording');
-      console.log('✅ 녹음 시작 완룼 - Google Speech API 모드');
+      console.log('✅ 녹음 시작 완료 - Google Speech API 모드');
+
+      // 타이머 설정
+      // 35초 후 경고 메시지 표시
+      warningTimerRef.current = setTimeout(() => {
+        setShowTimeWarning(true);
+        console.log('⚠️ 녹음 시간 경고 - 15초 후 자동 종료');
+      }, RECORDING_POLICY.WARNING_TIME);
+
+      // 45초 후 카운트다운 시작
+      countdownTimerRef.current = setTimeout(() => {
+        setRemainingTime(5);
+        const countdown = setInterval(() => {
+          setRemainingTime(prev => {
+            if (prev === null || prev <= 1) {
+              clearInterval(countdown);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, RECORDING_POLICY.COUNTDOWN_START_TIME);
+
+      // 50초 후 자동 정지
+      recordingTimerRef.current = setTimeout(() => {
+        autoStopRecording();
+      }, RECORDING_POLICY.MAX_RECORDING_DURATION);
 
     } catch (error) {
       console.error('❌ 녹음 시작 중 오류:', error);
@@ -208,6 +275,9 @@ export default function VoiceMemoPage() {
 
   const stopRecording = async () => {
     console.log('🛑 음성 녹음 중지 시작...');
+
+    // 모든 타이머 정리
+    clearAllTimers();
 
     // MediaRecorder 중지
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -257,6 +327,24 @@ export default function VoiceMemoPage() {
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold mb-4">음성 메모</h1>
           <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
+
+          {/* 시간 경고 메시지 */}
+          {showTimeWarning && (
+            <div className="mt-4 px-4 py-2 bg-yellow-900/50 border border-yellow-600 rounded-lg">
+              <p className="text-yellow-300 text-sm">
+                {RECORDING_MESSAGES.WARNING}
+              </p>
+            </div>
+          )}
+
+          {/* 카운트다운 표시 */}
+          {remainingTime !== null && (
+            <div className="mt-4 px-4 py-2 bg-red-900/50 border border-red-600 rounded-lg">
+              <p className="text-red-300 text-sm font-semibold">
+                {remainingTime}초 후 자동 종료
+              </p>
+            </div>
+          )}
 
           {/* User ID Display */}
           {userId && (
