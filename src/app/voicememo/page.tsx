@@ -252,78 +252,81 @@ export default function VoiceMemoPage() {
     <div className="min-h-screen bg-gray-950 text-white pb-20">
       <Header title="Voice Memo" />
 
-      {/* Main Content - Centered Vertically */}
-      <div className="flex items-center justify-center min-h-screen pt-20 pb-20">
-        <div className="text-center px-4 max-w-md mx-auto">
-          {/* Title Section */}
-          <div className="mb-12">
-            <h1 className="text-3xl font-bold mb-4">음성 메모</h1>
-            <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
+      <div className="pt-20 px-4 max-w-4xl mx-auto">
+        {/* Title Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl font-bold mb-4">음성 메모</h1>
+          <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
 
-            {/* User ID Display */}
-            {userId && (
-              <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-gray-300">
-                  사용자 ID: {getShortUserId(userId)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Recording Button */}
-          <div className="flex justify-center">
-            <button
-              onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
-              disabled={recordingStatus === 'processing' || recordingStatus === 'completed'}
-              className={`w-40 h-40 rounded-full border-4 transition-all duration-200 ${
-                recordingStatus === 'recording'
-                  ? 'bg-red-600 border-red-400 animate-pulse'
-                  : recordingStatus === 'processing'
-                  ? 'bg-yellow-600 border-yellow-400'
-                  : recordingStatus === 'completed'
-                  ? 'bg-green-600 border-green-400'
-                  : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
-              } ${(recordingStatus === 'processing' || recordingStatus === 'completed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-              <div className="flex flex-col items-center">
-                <div className="text-5xl mb-3">
-                  {recordingStatus === 'recording' ? '🎤' :
-                   recordingStatus === 'processing' ? '⏳' :
-                   recordingStatus === 'completed' ? '✅' : '🎤'}
-                </div>
-                <div className="text-sm font-semibold">
-                  {recordingStatus === 'recording' ? '녹음 중...' :
-                   recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
-                   recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
-                </div>
-              </div>
-            </button>
-          </div>
-
-          {/* 최근 메모 박스 */}
-          {latestMemo && (
-            <div className="mt-8 px-4">
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-300">최근 메모</h3>
-                  <span className="text-xs text-gray-500">
-                    {new Date(latestMemo.created_at).toLocaleString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
-                <div className="text-sm text-white leading-relaxed">
-                  {latestMemo.content.length > 100
-                    ? `${latestMemo.content.substring(0, 100)}...`
-                    : latestMemo.content}
-                </div>
-              </div>
+          {/* User ID Display */}
+          {userId && (
+            <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-xs text-gray-300">
+                사용자 ID: {getShortUserId(userId)}
+              </span>
             </div>
           )}
+        </div>
+
+        {/* Recording Button */}
+        <div className="flex justify-center mb-8">
+          <button
+            onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
+            disabled={recordingStatus === 'processing' || recordingStatus === 'completed'}
+            className={`w-40 h-40 rounded-full border-4 transition-all duration-200 ${
+              recordingStatus === 'recording'
+                ? 'bg-red-600 border-red-400 animate-pulse'
+                : recordingStatus === 'processing'
+                ? 'bg-yellow-600 border-yellow-400'
+                : recordingStatus === 'completed'
+                ? 'bg-green-600 border-green-400'
+                : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
+            } ${(recordingStatus === 'processing' || recordingStatus === 'completed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <div className="flex flex-col items-center">
+              <div className="text-5xl mb-3">
+                {recordingStatus === 'recording' ? '🎤' :
+                 recordingStatus === 'processing' ? '⏳' :
+                 recordingStatus === 'completed' ? '✅' : '🎤'}
+              </div>
+              <div className="text-sm font-semibold">
+                {recordingStatus === 'recording' ? '녹음 중...' :
+                 recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
+                 recordingStatus === 'completed' ? '완료!' : '녹음 시작'}
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* 최근 메모 박스 */}
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-300">최근 메모</h3>
+            {latestMemo && (
+              <span className="text-xs text-gray-500">
+                {new Date(latestMemo.created_at).toLocaleString('ko-KR', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </span>
+            )}
+          </div>
+          <div className="text-sm leading-relaxed">
+            {latestMemo ? (
+              <span className="text-white">
+                {latestMemo.content.length > 100
+                  ? `${latestMemo.content.substring(0, 100)}...`
+                  : latestMemo.content}
+              </span>
+            ) : (
+              <span className="text-gray-500 italic">
+                아직 메모가 없습니다
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
