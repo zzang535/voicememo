@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import MemoItem from '@/components/MemoItem';
 import { getUserId } from '@/utils/userUtils';
 
 interface MemoData {
@@ -18,8 +18,6 @@ export default function MemosPage() {
   const [memos, setMemos] = useState<MemoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
-  const router = useRouter();
-
   // 메모 목록 조회 함수
   const fetchMemos = async (userIdParam: string) => {
     try {
@@ -76,11 +74,6 @@ export default function MemosPage() {
     fetchMemos(initUserId);
   }, []);
 
-  // 메모 미리보기 텍스트 생성
-  const getPreviewText = (content: string, maxLength: number = 100) => {
-    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
-  };
-
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-20">
       <Header title="메모 목록" />
@@ -116,41 +109,7 @@ export default function MemosPage() {
           ) : (
             <div className="space-y-3">
               {memos.map((memo) => (
-                <div
-                  key={memo.id}
-                  className="bg-gray-800 rounded-lg p-4 transition-all hover:bg-gray-700"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-500 mb-2">
-                        #{memo.id} • {new Date(memo.created_at).toLocaleString('ko-KR')}
-                      </div>
-                      <p className="text-white text-sm leading-relaxed mb-2">
-                        {getPreviewText(memo.content, 150)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => router.push(`/memos/edit/${memo.id}`)}
-                        className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded-lg transition-colors"
-                        title="메모 수정"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => deleteMemo(memo.id)}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="메모 삭제"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <MemoItem key={memo.id} memo={memo} onDelete={deleteMemo} />
               ))}
             </div>
           )}

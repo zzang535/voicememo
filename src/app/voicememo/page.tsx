@@ -154,28 +154,109 @@ export default function VoiceMemoPage() {
   const uploadAudioChunk = async (audioBlob: Blob) => {
     try {
       console.log('📤 오디오 청크 업로드 시작:', { size: audioBlob.size, type: audioBlob.type });
+      console.log('🔧 STT 모드:', RECORDING_POLICY.STT_MODE);
 
-      const formData = new FormData();
-      formData.append('audio', audioBlob, `chunk.${audioBlob.type.includes('webm') ? 'webm' : 'mp4'}`);
+      let text: string;
 
-      const response = await fetch('/api/stt', {
-        method: 'POST',
-        body: formData
-      });
+      if (RECORDING_POLICY.STT_MODE === 'gcs') {
+        // GCS 모드: GCS에 업로드 후 LongRunningRecognize 사용
+        console.log('📤 GCS 업로드 중...');
 
-      if (!response.ok) {
-        throw new Error(`STT API 오류: ${response.statusText}`);
+        const formData = new FormData();
+        formData.append('audio', audioBlob, `chunk.${audioBlob.type.includes('webm') ? 'webm' : 'mp4'}`);
+
+        // 1단계: GCS 업로드
+        const uploadResponse = await fetch('/api/upload-gcs', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          console.error('❌ GCS 업로드 오류:', errorData);
+          throw new Error(errorData.message || 'GCS 업로드 실패');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        console.log('✅ GCS 업로드 완료:', uploadResult.gcsUri);
+
+        // 2단계: LongRunningRecognize 호출
+        console.log('🎤 LongRunningRecognize 시작...');
+        const sttResponse = await fetch('/api/stt-long', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            gcsUri: uploadResult.gcsUri,
+            mimeType: audioBlob.type
+          })
+        });
+
+        if (!sttResponse.ok) {
+          const errorData = await sttResponse.json();
+          console.error('❌ LongRunningRecognize 오류:', {
+            status: sttResponse.status,
+            statusText: sttResponse.statusText,
+            error: errorData.error,
+            message: errorData.message,
+            details: errorData.details,
+            originalError: errorData.originalError
+          });
+
+          if (errorData.details) {
+            console.error('📋 Google API 에러 상세:', errorData.details);
+          }
+
+          throw new Error(errorData.message || 'LongRunningRecognize 실패');
+        }
+
+        const sttResult = await sttResponse.json();
+        console.log('📝 LongRunningRecognize 결과 수신:', sttResult);
+        text = sttResult.text;
+
+      } else {
+        // Direct 모드: 직접 Speech API 호출
+        console.log('🎤 Direct STT 모드');
+
+        const formData = new FormData();
+        formData.append('audio', audioBlob, `chunk.${audioBlob.type.includes('webm') ? 'webm' : 'mp4'}`);
+
+        const response = await fetch('/api/stt', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('❌ STT API 오류:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData.error,
+            message: errorData.message,
+            details: errorData.details,
+            originalError: errorData.originalError
+          });
+
+          if (errorData.details) {
+            console.error('📋 Google API 에러 상세:', errorData.details);
+          }
+
+          throw new Error(errorData.message || `STT API 오류: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('📝 STT 결과 수신:', result);
+        text = result.text;
       }
 
-      const result = await response.json();
-      console.log('📝 STT 결과 수신:', result);
-
-      if (result.text && result.text.trim()) {
-        console.log('📄 텍스트 변환 완료:', result.text.trim());
+      // 결과 처리
+      if (text && text.trim()) {
+        console.log('📄 텍스트 변환 완료:', text.trim());
 
         // 즉시 저장 처리
         console.log('💾 메모 자동 저장 시작...');
-        await saveMemo(result.text.trim());
+        await saveMemo(text.trim());
         console.log('✅ 메모 저장 완료');
 
         // 완료 상태로 변경
@@ -257,26 +338,25 @@ export default function VoiceMemoPage() {
       console.log('✅ 녹음 시작 완료 - Google Speech API 모드');
 
       // 타이머 설정
-      // 20초 후 10초 카운트다운 시작
-      countdownTimerRef.current = setTimeout(() => {
-        setRemainingTime(10);
-        console.log('⚠️ 10초 카운트다운 시작');
+      // 녹음 시작과 동시에 카운트다운 시작
+      const maxSeconds = Math.floor(RECORDING_POLICY.MAX_RECORDING_DURATION / 1000);
+      setRemainingTime(maxSeconds);
+      console.log(`⏱️ ${maxSeconds}초 카운트다운 시작`);
 
-        countdownIntervalRef.current = setInterval(() => {
-          setRemainingTime(prev => {
-            if (prev === null || prev <= 1) {
-              if (countdownIntervalRef.current) {
-                clearInterval(countdownIntervalRef.current);
-                countdownIntervalRef.current = null;
-              }
-              return null;
+      countdownIntervalRef.current = setInterval(() => {
+        setRemainingTime(prev => {
+          if (prev === null || prev <= 1) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
             }
-            return prev - 1;
-          });
-        }, 1000);
-      }, RECORDING_POLICY.COUNTDOWN_START_TIME);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
 
-      // 30초 후 자동 정지
+      // MAX_RECORDING_DURATION 후 자동 정지
       recordingTimerRef.current = setTimeout(() => {
         autoStopRecording();
       }, RECORDING_POLICY.MAX_RECORDING_DURATION);
@@ -341,15 +421,6 @@ export default function VoiceMemoPage() {
         <div className="text-center mb-12">
           <p className="text-gray-400">버튼을 눌러 음성을 녹음하고 텍스트로 변환하세요</p>
 
-          {/* 카운트다운 표시 */}
-          {remainingTime !== null && (
-            <div className="mt-4 px-4 py-2 bg-red-900/50 border border-red-600 rounded-lg">
-              <p className="text-red-300 text-sm font-semibold">
-                {remainingTime}초 후 자동 종료됩니다
-              </p>
-            </div>
-          )}
-
           {/* User ID Display */}
           {userId && (
             <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
@@ -362,7 +433,7 @@ export default function VoiceMemoPage() {
         </div>
 
         {/* Recording Button */}
-        <div className="flex justify-center mb-8">
+        <div className="flex flex-col items-center mb-8">
           <button
             onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
             disabled={recordingStatus === 'processing' || recordingStatus === 'completed' || recordingStatus === 'failed'}
@@ -386,7 +457,17 @@ export default function VoiceMemoPage() {
                  recordingStatus === 'failed' ? '❌' : '🎤'}
               </div>
               <div className="text-sm font-semibold">
-                {recordingStatus === 'recording' ? '녹음 중...' :
+                {recordingStatus === 'recording' && remainingTime !== null ? (
+                  <span className={`tabular-nums ${
+                    remainingTime <= RECORDING_POLICY.DANGER_THRESHOLD
+                      ? 'text-red-200'
+                      : remainingTime <= RECORDING_POLICY.WARNING_THRESHOLD
+                      ? 'text-yellow-200'
+                      : 'text-green-200'
+                  }`}>
+                    {Math.floor(remainingTime / 60)}:{String(remainingTime % 60).padStart(2, '0')}
+                  </span>
+                ) : recordingStatus === 'recording' ? '녹음 중...' :
                  recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
                  recordingStatus === 'completed' ? '완료!' :
                  recordingStatus === 'failed' ? '실패' : '녹음 시작'}
