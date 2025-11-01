@@ -24,6 +24,9 @@ export const RECORDING_POLICY = {
     ? 60 * 1000  // 5분 (GCS 모드)
     : 30 * 1000,  // 50초 (Direct 모드)
 
+  // 녹음 중지 시 딜레이 (마지막 음성 캡처를 위한 대기 시간)
+  STOP_DELAY: 1000, // 1초 (밀리초)
+
   // 카운트다운 시작 시점 (녹음 시작부터 바로 표시)
   COUNTDOWN_START_TIME: 0, // 0초 (밀리초)
 

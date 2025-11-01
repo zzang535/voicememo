@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { getUserId, getShortUserId } from '@/utils/userUtils';
-import { RECORDING_POLICY, RECORDING_MESSAGES } from '@/config/recordingPolicy';
+import { RECORDING_POLICY } from '@/config/recordingPolicy';
 
 interface MemoData {
   id: number;
@@ -368,10 +368,17 @@ export default function VoiceMemoPage() {
   };
 
   const stopRecording = async () => {
-    console.log('🛑 음성 녹음 중지 시작...');
+    console.log('🛑 음성 녹음 중지 버튼 클릭...');
+
+    // 즉시 처리 중 상태로 UI 변경
+    setRecordingStatus('processing');
 
     // 모든 타이머 정리
     clearAllTimers();
+
+    // STOP_DELAY 만큼 대기 (마지막 음성 캡처)
+    console.log(`⏳ ${RECORDING_POLICY.STOP_DELAY}ms 대기 중 (마지막 음성 캡처)...`);
+    await new Promise(resolve => setTimeout(resolve, RECORDING_POLICY.STOP_DELAY));
 
     // MediaRecorder 중지
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -379,9 +386,6 @@ export default function VoiceMemoPage() {
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       console.log('✅ MediaRecorder 중지 완료');
     }
-
-    // 처리 중 상태로 변경
-    setRecordingStatus('processing');
 
     // 녹음된 오디오 파일을 Google Speech API로 처리
     if (audioChunksRef.current.length > 0) {
