@@ -8,13 +8,19 @@ export const runtime = 'nodejs';
 let speechClient: SpeechClient;
 
 try {
-  // API 키가 있으면 REST API 사용, 없으면 기본 인증 사용
+  // API 키가 있으면 REST API 사용, 없으면 서비스 계정 사용
   if (process.env.GOOGLE_API_KEY) {
     console.log('🔑 Google API Key 방식 사용');
     // API 키 방식은 REST API로 처리 (아래 함수에서 구현)
     speechClient = new SpeechClient(); // fallback
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    console.log('🔐 서비스 계정 JSON 방식 사용');
+    // Vercel 환경: 환경 변수에서 서비스 계정 키 읽기
+    const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    speechClient = new SpeechClient({ credentials });
   } else {
-    console.log('🔐 서비스 계정 방식 사용');
+    console.log('🔐 기본 서비스 계정 방식 사용 (로컬)');
+    // 로컬 환경: GOOGLE_APPLICATION_CREDENTIALS 파일 경로 사용
     speechClient = new SpeechClient();
   }
 } catch (error) {
@@ -55,10 +61,33 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('❌ STT 처리 중 오류:', error);
 
+    // 에러 메시지 상세 정보 추출
+    let errorMessage = 'Unknown error';
+    let errorCode = 500;
+    let errorDetails = null;
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+
+      // Google API 에러 메시지 파싱 시도
+      try {
+        const errorJson = JSON.parse(error.message);
+        if (errorJson.error) {
+          errorDetails = errorJson.error;
+          errorMessage = errorJson.error.message || errorMessage;
+          errorCode = errorJson.error.code || errorCode;
+        }
+      } catch {
+        // JSON 파싱 실패 시 원본 메시지 사용
+      }
+    }
+
     return NextResponse.json({
       error: 'STT processing failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+      message: errorMessage,
+      details: errorDetails,
+      originalError: error instanceof Error ? error.message : String(error)
+    }, { status: errorCode });
   }
 }
 
@@ -74,9 +103,8 @@ async function processWithGoogleSTT(buffer: Buffer, mimeType: string): Promise<s
   } catch (error) {
     console.error('❌ Google Speech API 오류:', error);
 
-    // Google API 실패 시 mock으로 fallback
-    console.log('🔄 Mock STT로 fallback 처리...');
-    return await mockSTTProcessing(buffer);
+    // 에러를 클라이언트로 전달하기 위해 throw
+    throw error;
   }
 }
 
@@ -189,27 +217,6 @@ async function processWithGoogleSTTServiceAccount(buffer: Buffer, mimeType: stri
   return transcription;
 }
 
-// 임시 STT 처리 함수 (Google API 실패 시 fallback용)
-async function mockSTTProcessing(buffer: Buffer): Promise<string> {
-  // 오디오 크기에 따른 모의 텍스트 생성
-  const sizeKB = buffer.length / 1024;
-
-  const mockTexts = [
-    '안녕하세요',
-    '음성 인식이 잘 되고 있습니다',
-    '서버에서 처리 중입니다',
-    '모바일에서도 정상 동작합니다',
-    '텍스트가 실시간으로 업데이트됩니다'
-  ];
-
-  // 오디오 크기에 따라 다른 응답 (실제로는 STT 결과)
-  const index = Math.floor(sizeKB / 10) % mockTexts.length;
-
-  // 실제 STT 처리 시뮬레이션을 위한 지연
-  await new Promise(resolve => setTimeout(resolve, 200));
-
-  return mockTexts[index];
-}
 
 // 실제 OpenAI Whisper API 사용 예시 (주석 처리)
 /*
