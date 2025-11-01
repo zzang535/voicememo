@@ -8,9 +8,22 @@ export const runtime = 'nodejs';
 let storage: Storage;
 
 try {
-  storage = new Storage();
+  // 환경 변수에서 서비스 계정 JSON 파싱
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (!credentialsJson) {
+    throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.');
+  }
+
+  const credentials = JSON.parse(credentialsJson);
+
+  storage = new Storage({
+    projectId: credentials.project_id,
+    credentials: credentials,
+  });
+
   console.log('✅ Google Cloud Storage 클라이언트 초기화 성공');
   console.log('📦 GCS 버킷:', GCS_CONFIG.BUCKET_NAME);
+  console.log('🔑 프로젝트 ID:', credentials.project_id);
 } catch (error) {
   console.error('❌ Google Cloud Storage 클라이언트 초기화 실패:', error);
   throw error;

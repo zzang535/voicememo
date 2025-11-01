@@ -7,8 +7,21 @@ export const runtime = 'nodejs';
 let speechClient: SpeechClient;
 
 try {
-  speechClient = new SpeechClient();
+  // 환경 변수에서 서비스 계정 JSON 파싱
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (!credentialsJson) {
+    throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.');
+  }
+
+  const credentials = JSON.parse(credentialsJson);
+
+  speechClient = new SpeechClient({
+    projectId: credentials.project_id,
+    credentials: credentials,
+  });
+
   console.log('✅ Google Speech 클라이언트 초기화 성공 (LongRunning)');
+  console.log('🔑 프로젝트 ID:', credentials.project_id);
 } catch (error) {
   console.error('❌ Google Speech 클라이언트 초기화 실패:', error);
   throw error;
