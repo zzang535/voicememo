@@ -154,12 +154,12 @@ export default function MemoEditPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className="fixed inset-0 bg-gray-950 text-white flex flex-col">
       <Header title="메모 수정" />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
+      <div className="flex-1 flex flex-col pt-20 pb-24 px-4 max-w-4xl mx-auto w-full overflow-hidden">
         {/* 메모 정보 */}
-        <div className="mb-6">
+        <div className="flex-shrink-0 mb-4">
           <div className="text-sm text-gray-400 mb-2">
             메모 #{memo.id}
           </div>
@@ -174,24 +174,24 @@ export default function MemoEditPage() {
         </div>
 
         {/* 메모 편집 영역 */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-2">
+        <div className="flex-1 flex flex-col min-h-0 mb-4">
+          <label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-2 flex-shrink-0">
             메모 내용
           </label>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full h-64 p-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+            className="flex-1 w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
             placeholder="메모 내용을 입력하세요..."
           />
-          <div className="mt-2 text-xs text-gray-500">
+          <div className="mt-2 text-xs text-gray-500 flex-shrink-0">
             글자 수: {content.length}자
           </div>
         </div>
 
         {/* 버튼 영역 */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-shrink-0">
           <button
             onClick={() => router.push('/memos')}
             className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
