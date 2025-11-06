@@ -158,7 +158,7 @@ export default function MemoEditPage() {
     <div className="fixed inset-0 bg-gray-950 text-white flex flex-col">
       <Header title="메모 수정" />
 
-      <div className="flex-1 flex flex-col pt-20 pb-24 px-4 max-w-4xl mx-auto w-full overflow-hidden">
+      <div className={`flex-1 flex flex-col pt-20 px-4 max-w-4xl mx-auto w-full overflow-hidden transition-all ${isTextareaFocused ? 'pb-4' : 'pb-24'}`}>
         {/* 메모 정보 */}
         <div className="flex-shrink-0 mb-4">
           <div className="text-sm text-gray-400 mb-2">
