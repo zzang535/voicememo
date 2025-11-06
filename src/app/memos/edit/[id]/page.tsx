@@ -22,6 +22,7 @@ export default function MemoEditPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   const memoId = params.id as string;
 
@@ -182,6 +183,8 @@ export default function MemoEditPage() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onFocus={() => setIsTextareaFocused(true)}
+            onBlur={() => setIsTextareaFocused(false)}
             className="flex-1 w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
             placeholder="메모 내용을 입력하세요..."
           />
@@ -218,7 +221,7 @@ export default function MemoEditPage() {
         </div>
       </div>
 
-      <BottomNavigation />
+      {!isTextareaFocused && <BottomNavigation />}
     </div>
   );
 }
