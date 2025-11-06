@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import ConfirmModal from '@/components/ConfirmModal';
+import AlertModal from '@/components/AlertModal';
 import { getUserId } from '@/utils/userUtils';
 
 interface MemoData {
@@ -23,6 +25,8 @@ export default function MemoEditPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string>('');
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEmptyAlert, setShowEmptyAlert] = useState(false);
 
   const memoId = params.id as string;
 
@@ -61,7 +65,12 @@ export default function MemoEditPage() {
 
   // 메모 저장
   const saveMemo = async () => {
-    if (!content.trim() || !memo) return;
+    if (!content.trim()) {
+      setShowEmptyAlert(true);
+      return;
+    }
+
+    if (!memo) return;
 
     setIsSaving(true);
     try {
@@ -94,12 +103,16 @@ export default function MemoEditPage() {
     }
   };
 
-  // 메모 삭제
-  const deleteMemo = async () => {
+  // 메모 삭제 확인
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  // 메모 삭제 실행
+  const confirmDelete = async () => {
     if (!memo) return;
 
-    const confirmed = confirm('정말로 이 메모를 삭제하시겠습니까?');
-    if (!confirmed) return;
+    setShowDeleteConfirm(false);
 
     try {
       const response = await fetch(`/api/memo?id=${memo.id}&userId=${encodeURIComponent(userId)}`, {
@@ -210,12 +223,8 @@ export default function MemoEditPage() {
           <button
             onMouseDown={(e) => {
               e.preventDefault();
-              deleteMemo();
             }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              deleteMemo();
-            }}
+            onClick={handleDeleteClick}
             className="py-3 px-6 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
           >
             삭제
@@ -223,18 +232,9 @@ export default function MemoEditPage() {
           <button
             onMouseDown={(e) => {
               e.preventDefault();
-              saveMemo();
             }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              saveMemo();
-            }}
-            disabled={isSaving || !content.trim() || content === memo.content}
-            className={`flex-1 py-3 px-4 rounded-lg transition-colors ${
-              isSaving || !content.trim() || content === memo.content
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
+            onClick={saveMemo}
+            className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             {isSaving ? '저장 중...' : '저장'}
           </button>
@@ -242,6 +242,24 @@ export default function MemoEditPage() {
       </div>
 
       {!isTextareaFocused && <BottomNavigation />}
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        message="정말로 이 메모를 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        confirmButtonColor="red"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* 빈 내용 알림 모달 */}
+      <AlertModal
+        isOpen={showEmptyAlert}
+        message="메모 내용을 입력해주세요."
+        onConfirm={() => setShowEmptyAlert(false)}
+      />
     </div>
   );
 }
