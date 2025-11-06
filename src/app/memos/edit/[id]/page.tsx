@@ -196,19 +196,39 @@ export default function MemoEditPage() {
         {/* 버튼 영역 */}
         <div className="flex gap-4 flex-shrink-0">
           <button
-            onClick={() => router.push('/memos')}
+            onClick={() => {
+              if (isTextareaFocused) {
+                setIsTextareaFocused(false);
+              } else {
+                router.push('/memos');
+              }
+            }}
             className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
           >
             취소
           </button>
           <button
-            onClick={deleteMemo}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              deleteMemo();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              deleteMemo();
+            }}
             className="py-3 px-6 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
           >
             삭제
           </button>
           <button
-            onClick={saveMemo}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveMemo();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              saveMemo();
+            }}
             disabled={isSaving || !content.trim() || content === memo.content}
             className={`flex-1 py-3 px-4 rounded-lg transition-colors ${
               isSaving || !content.trim() || content === memo.content
