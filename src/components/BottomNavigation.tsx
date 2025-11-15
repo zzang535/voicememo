@@ -11,7 +11,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    href: '/',
+    href: '/voicememo',
     icon: '🎤',
     label: '음성노트'
   },
