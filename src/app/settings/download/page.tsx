@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import BottomNavigation from '@/components/BottomNavigation';
 import { getUserId } from '@/utils/userUtils';
 
 interface MemoData {
@@ -115,7 +114,7 @@ export default function DownloadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className="min-h-screen bg-gray-950 text-white">
       <Header title="데이터 다운로드" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-20 px-4 max-w-4xl mx-auto">
@@ -186,8 +185,6 @@ export default function DownloadPage() {
           </div>
         )}
       </div>
-
-      <BottomNavigation />
     </div>
   );
 }

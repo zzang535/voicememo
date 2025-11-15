@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 interface ConfirmModalProps {
   isOpen: boolean;
   title?: string;
@@ -21,7 +23,20 @@ export default function ConfirmModal({
   onCancel,
   confirmButtonColor = 'blue'
 }: ConfirmModalProps) {
-  if (!isOpen) return null;
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      setTimeout(() => setIsAnimating(true), 10);
+    } else {
+      setIsAnimating(false);
+      setTimeout(() => setIsVisible(false), 200);
+    }
+  }, [isOpen]);
+
+  if (!isVisible) return null;
 
   const confirmColorClass = confirmButtonColor === 'red'
     ? 'bg-red-600 hover:bg-red-700'
@@ -31,12 +46,16 @@ export default function ConfirmModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* 배경 오버레이 */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-200 ${
+          isAnimating ? 'opacity-100' : 'opacity-0'
+        }`}
         onClick={onCancel}
       />
 
       {/* 모달 컨텐츠 */}
-      <div className="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-scale-in">
+      <div className={`relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 transition-all duration-200 ${
+        isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      }`}>
         {title && (
           <h3 className="text-lg font-semibold text-white mb-3">
             {title}

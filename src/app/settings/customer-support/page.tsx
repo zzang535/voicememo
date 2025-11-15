@@ -2,42 +2,39 @@
 
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import BottomNavigation from '@/components/BottomNavigation';
+import { APP_NAME, COMPANY_INFO } from '@/constants/app';
 
 export default function CustomerSupportPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className="min-h-screen bg-gray-950 text-white">
       <Header title="고객센터" showBackButton onBackClick={() => router.back()} />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
-        <div className="space-y-6">
+      <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
+        <div className="mt-4 space-y-6">
 
           {/* 연락처 정보 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">연락처 정보</h3>
+            <h3 className="text-lg font-semibold text-white">고객센터 정보</h3>
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="space-y-2">
                 <p className="text-sm text-gray-300">
-                  <span className="font-medium text-white">회사명:</span> 싱잉버드
+                  <span className="font-medium text-white">회사명:</span> {COMPANY_INFO.NAME}
                 </p>
                 <p className="text-sm text-gray-300">
-                  <span className="font-medium text-white">담당부서:</span> 개발팀
-                </p>
-                <p className="text-sm text-gray-300">
-                  <span className="font-medium text-white">담당자:</span> 황윤
+                  <span className="font-medium text-white">담당부서:</span> {COMPANY_INFO.DEPARTMENT}
                 </p>
                 <p className="text-sm text-gray-300">
                   <span className="font-medium text-white">이메일:</span>
-                  <a href="mailto:singingbird535@gmail.com" className="text-blue-400 hover:text-blue-300 ml-1">
-                    singingbird535@gmail.com
+                  <a href={`mailto:${COMPANY_INFO.CONTACT.EMAIL}`} className="text-blue-400 hover:text-blue-300 ml-1">
+                    {COMPANY_INFO.CONTACT.EMAIL}
                   </a>
                 </p>
                 <p className="text-sm text-gray-300">
                   <span className="font-medium text-white">전화번호:</span>
-                  <a href="tel:010-2849-0490" className="text-blue-400 hover:text-blue-300 ml-1">
-                    010-2849-0490
+                  <a href={`tel:${COMPANY_INFO.CONTACT.PHONE}`} className="text-blue-400 hover:text-blue-300 ml-1">
+                    {COMPANY_INFO.CONTACT.PHONE}
                   </a>
                 </p>
                 <p className="text-sm text-gray-300">
@@ -62,15 +59,6 @@ export default function CustomerSupportPage() {
                 </p>
               </div>
 
-              {/* FAQ 2 */}
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h4 className="text-md font-medium text-white mb-2">
-                  Q. 저장된 메모를 다른 기기에서도 볼 수 있나요?
-                </h4>
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  A. 현재 모든 데이터는 로컬 기기에만 저장되어 다른 기기에서는 접근할 수 없습니다. 데이터의 프라이버시와 보안을 위한 정책입니다. 향후 클라우드 동기화 기능을 검토 중입니다.
-                </p>
-              </div>
 
               {/* FAQ 3 */}
               <div className="bg-gray-800 p-4 rounded-lg">
@@ -78,7 +66,7 @@ export default function CustomerSupportPage() {
                   Q. 음성 메모를 백업하고 싶어요.
                 </h4>
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  A. 설정 메뉴의 &apos;데이터 다운로드&apos; 기능을 이용해 음성 메모 데이터를 JSON 파일로 다운로드할 수 있습니다. 이 파일을 안전한 곳에 보관하시면 백업 용도로 활용하실 수 있습니다.
+                  A. 모든 음성 메모는 서버에 안전하게 보관되므로 자동으로 백업됩니다. 설정 메뉴의 &apos;데이터 다운로드&apos; 기능은 현재 개발 중입니다. 조금만 기다려주세요!
                 </p>
               </div>
 
@@ -88,7 +76,10 @@ export default function CustomerSupportPage() {
                   Q. 마이크 권한을 허용했는데 녹음이 안돼요.
                 </h4>
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  A. 브라우저를 새로고침하거나 재시작해보세요. 다른 애플리케이션에서 마이크를 사용하고 있지는 않은지 확인해주세요. 문제가 지속되면 브라우저 설정에서 마이크 권한을 다시 설정해보시기 바랍니다.
+                  A. 다음 방법을 시도해보세요:<br />
+                  • 브라우저: 페이지를 새로고침하거나 브라우저를 재시작해보세요. 브라우저 설정에서 마이크 권한을 다시 확인해주세요.<br />
+                  • 앱: 앱을 완전히 종료한 후 다시 실행해보세요. 기기 설정에서 앱의 마이크 권한을 확인해주세요.<br />
+                  • 공통: 다른 애플리케이션에서 마이크를 사용하고 있지 않은지 확인해주세요.
                 </p>
               </div>
 
@@ -98,7 +89,7 @@ export default function CustomerSupportPage() {
                   Q. 서비스는 무료인가요?
                 </h4>
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  A. 네, Voice Memo는 완전 무료 서비스입니다. 별도의 회원가입이나 결제 없이 모든 기능을 이용하실 수 있습니다.
+                  A. 네, {APP_NAME.FULL}는 완전 무료 서비스입니다. 별도의 회원가입이나 결제 없이 모든 기능을 이용하실 수 있습니다.
                 </p>
               </div>
             </div>
@@ -114,7 +105,7 @@ export default function CustomerSupportPage() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
-                  href="mailto:singingbird535@gmail.com?subject=Voice Memo 지원 문의"
+                  href={`mailto:${COMPANY_INFO.CONTACT.EMAIL}?subject=${APP_NAME.FULL} 지원 문의`}
                   className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +115,7 @@ export default function CustomerSupportPage() {
                 </a>
 
                 <a
-                  href="tel:010-2849-0490"
+                  href={`tel:${COMPANY_INFO.CONTACT.PHONE}`}
                   className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,8 +130,6 @@ export default function CustomerSupportPage() {
 
         </div>
       </div>
-
-      <BottomNavigation />
     </div>
   );
 }

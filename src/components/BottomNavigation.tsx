@@ -11,14 +11,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    href: '/voicememo',
+    href: '/',
     icon: '🎤',
-    label: '음성메모'
+    label: '음성노트'
   },
   {
-    href: '/memos',
+    href: '/notes',
     icon: '📝',
-    label: '메모목록'
+    label: '노트목록'
   },
   {
     href: '/settings',
@@ -40,14 +40,18 @@ export default function BottomNavigation() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center py-3 px-4 transition-colors duration-200 ${
-                isActive
-                  ? 'text-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
+              className="relative flex flex-col items-center justify-center py-3 px-4 transition-colors duration-200"
             >
-              <div className="text-2xl mb-1">{item.icon}</div>
-              <span className="text-xs font-medium">{item.label}</span>
+              <div className={`text-2xl transition-all duration-200 ${
+                isActive
+                  ? 'text-blue-400 scale-110'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}>
+                {item.icon}
+              </div>
+              {isActive && (
+                <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
+              )}
             </Link>
           );
         })}

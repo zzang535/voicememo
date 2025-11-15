@@ -1,24 +1,27 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import AlertModal from '@/components/AlertModal';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const [showComingSoonAlert, setShowComingSoonAlert] = useState(false);
 
   const settingsItems = [
     {
       title: '서비스 정보',
       description: '',
       icon: 'ℹ️',
-      action: () => router.push('/settings/version')
+      action: () => router.push('/settings/service-info')
     },
     {
       title: '데이터 다운로드',
       description: '',
       icon: '💾',
-      action: () => router.push('/settings/download')
+      action: () => setShowComingSoonAlert(true)
     },
     {
       title: '개인정보처리방침',
@@ -44,10 +47,10 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-gray-950 text-white pb-20">
       <Header title="설정" />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
+      <div className="pt-14 px-4 max-w-4xl mx-auto">
 
         {/* Settings Items */}
-        <div className="space-y-4">
+        <div className="mt-4 space-y-4">
           {settingsItems.map((item, index) => (
             <div
               key={index}
@@ -77,6 +80,13 @@ export default function SettingsPage() {
       </div>
 
       <BottomNavigation />
+
+      {/* 준비중 알림 모달 */}
+      <AlertModal
+        isOpen={showComingSoonAlert}
+        message="🚧 개발중인 기능입니다. 조금만 기다려주세요! 😊"
+        onConfirm={() => setShowComingSoonAlert(false)}
+      />
     </div>
   );
 }

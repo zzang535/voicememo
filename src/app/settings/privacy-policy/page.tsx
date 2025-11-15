@@ -2,23 +2,23 @@
 
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import BottomNavigation from '@/components/BottomNavigation';
+import { APP_NAME, COMPANY_INFO } from '@/constants/app';
 
 export default function PrivacyPolicyPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className="min-h-screen bg-gray-950 text-white">
       <Header title="개인정보처리방침" showBackButton onBackClick={() => router.back()} />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
-        <div className="space-y-6">
+      <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
+        <div className="mt-4 space-y-6">
 
           {/* 섹션 1: 개인정보의 처리 목적 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">1. 개인정보의 처리 목적</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              Voice Memo(이하 &quot;서비스&quot;)는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 개인정보 보호법 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
+              {APP_NAME.FULL}(이하 &quot;서비스&quot;)는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 개인정보 보호법 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
               <li>음성 메모 기록 및 관리 서비스 제공</li>
@@ -41,35 +41,39 @@ export default function PrivacyPolicyPage() {
               <div>
                 <p className="text-sm font-medium text-white">▶ 필수 수집 항목</p>
                 <ul className="list-disc pl-5 text-xs text-gray-300 space-y-1 leading-relaxed">
-                  <li>기기 식별 정보 (로컬 저장소 관리용)</li>
+                  <li>기기 식별 정보</li>
                 </ul>
+                <p className="text-xs text-gray-400 mt-2">※ 데이터 복구 및 기기 간 동기화 목적으로 사용됩니다.</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-white">▶ 선택 수집 항목</p>
                 <ul className="list-disc pl-5 text-xs text-gray-300 space-y-1 leading-relaxed">
-                  <li>마이크 권한 (음성 녹음 시에만)</li>
+                  <li>마이크 권한</li>
                 </ul>
+                <p className="text-xs text-gray-400 mt-2">※ 음성 녹음 시에만 사용됩니다.</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-white">▶ 서비스 이용 과정에서 생성되는 정보</p>
+                <p className="text-sm font-medium text-white">▶ 서비스 이용 과정에서 생성 및 저장되는 정보</p>
                 <ul className="list-disc pl-5 text-xs text-gray-300 space-y-1 leading-relaxed">
-                  <li>음성 메모 파일 및 텍스트 변환 결과</li>
+                  <li>음성 메모 파일</li>
+                  <li>텍스트 변환 결과</li>
                   <li>메모 작성 일시 및 관리 정보</li>
                   <li>서비스 이용 기록 및 접속 로그</li>
                 </ul>
+                <p className="text-xs text-gray-400 mt-2">※ 음성 메모, 텍스트, 메모 정보는 서버에 안전하게 보관됩니다.</p>
               </div>
             </div>
           </div>
 
-          {/* 섹션 3: 개인정보 수집 방법 */}
+          {/* 섹션 3: 개인정보 수집 및 저장 방법 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">3. 개인정보 수집 방법</h3>
+            <h3 className="text-lg font-semibold text-white">3. 개인정보 수집 및 저장 방법</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              서비스는 다음과 같은 방법으로 개인정보를 수집합니다:
+              서비스는 다음과 같은 방법으로 개인정보를 수집하고 저장합니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
               <li>사용자가 음성 메모 서비스 이용 과정에서 직접 제공</li>
-              <li>음성 녹음 및 텍스트 변환 과정에서 자동으로 생성되어 수집되는 정보</li>
+              <li>음성 녹음 및 텍스트 변환 과정에서 자동으로 생성되어 서버에 저장</li>
               <li>서비스 이용 과정에서 자동으로 생성되어 수집되는 정보</li>
               <li>고객 지원을 통한 상담 과정에서 수집</li>
             </ul>
@@ -79,11 +83,12 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">4. 개인정보의 처리 및 보유기간</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              서비스는 사용자의 로컬 기기에 데이터를 저장하며, 다음과 같은 보유기간을 적용합니다:
+              서비스는 사용자의 데이터를 서버에 저장하며, 다음과 같은 보유기간을 적용합니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>음성 메모 파일: 사용자가 직접 삭제하기 전까지 로컬 기기에 보관</li>
-              <li>텍스트 변환 결과: 사용자가 직접 삭제하기 전까지 로컬 기기에 보관</li>
+              <li>음성 메모 파일: 사용자가 직접 삭제하기 전까지 서버에 보관</li>
+              <li>텍스트 변환 결과: 사용자가 직접 삭제하기 전까지 서버에 보관</li>
+              <li>기기 식별 정보: 사용자가 서비스를 이용하는 동안 보관</li>
               <li>서비스 이용 기록: 브라우저 종료 시 자동 삭제</li>
               <li>관련 법령에 따른 보존이 필요한 경우: 해당 법령에서 정한 기간</li>
             </ul>
@@ -93,7 +98,7 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">5. 개인정보의 제3자 제공</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              서비스는 원칙적으로 사용자의 개인정보를 제3자에게 제공하지 않습니다. 모든 데이터는 사용자의 로컬 기기에 저장되며, 다음의 경우에만 예외로 합니다:
+              서비스는 원칙적으로 사용자의 개인정보를 제3자에게 제공하지 않습니다. 다음의 경우에만 예외로 합니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
               <li>사용자가 사전에 동의한 경우</li>
@@ -108,11 +113,11 @@ export default function PrivacyPolicyPage() {
               서비스는 개인정보의 안전성 확보를 위해 다음과 같은 조치를 취하고 있습니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>로컬 저장소 활용으로 외부 서버 전송 최소화</li>
               <li>브라우저의 보안 정책 준수</li>
-              <li>HTTPS 프로토콜을 통한 안전한 서비스 제공</li>
+              <li>HTTPS 프로토콜을 통한 안전한 데이터 전송</li>
               <li>정기적인 보안 점검 및 업데이트</li>
               <li>개인정보 처리시스템 접근 제한 및 기록 관리</li>
+              <li>서버 보안 시스템 운영 및 모니터링</li>
             </ul>
           </div>
 
@@ -120,12 +125,13 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">7. 쿠키 및 자동수집 도구</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              서비스는 사용자 편의성 향상을 위해 로컬 저장소를 사용합니다:
+              서비스는 사용자 편의성 향상을 위해 로컬 저장소와 서버 데이터베이스를 사용합니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>로컬 저장소 사용 목적: 음성 메모 저장, 사용자 설정 유지</li>
+              <li>로컬 저장소 사용 목적: 사용자 설정 유지, 임시 데이터 저장</li>
+              <li>서버 저장 목적: 음성 메모 및 텍스트 정보의 영구 보관, 기기 간 동기화 및 복구</li>
               <li>로컬 저장소 삭제 방법: 브라우저 설정을 통해 삭제할 수 있습니다</li>
-              <li>로컬 저장소 삭제 시: 저장된 모든 음성 메모가 삭제됩니다</li>
+              <li>서버 데이터 삭제 방법: 서비스 내 메모 삭제 기능을 통해 삭제할 수 있습니다</li>
             </ul>
           </div>
 
@@ -149,13 +155,14 @@ export default function PrivacyPolicyPage() {
               정보주체는 서비스에 대해 언제든지 다음 각 호의 개인정보 보호 관련 권리를 행사할 수 있습니다.
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>개인정보 열람 요구 (브라우저 개발자 도구를 통한 로컬 저장소 확인)</li>
-              <li>오류 등이 있을 경우 정정 요구</li>
-              <li>삭제 요구 (브라우저 설정을 통한 로컬 저장소 삭제)</li>
+              <li>개인정보 열람 요구 (서비스 내 메모 목록에서 확인 가능)</li>
+              <li>오류 등이 있을 경우 정정 요구 (서비스 내 메모 수정 기능 이용)</li>
+              <li>삭제 요구 (서비스 내 메모 삭제 기능 이용 또는 고객센터 문의)</li>
               <li>처리정지 요구</li>
+              <li>데이터 다운로드 요구 (향후 제공 예정)</li>
             </ul>
             <p className="text-xs text-gray-400 leading-relaxed mt-2">
-              권리 행사는 서비스 내 설정 메뉴 또는 개인정보 보호책임자에게 서면, 전화, 전자우편을 통하여 하실 수 있으며 서비스는 이에 대해 지체없이 조치하겠습니다.
+              권리 행사는 서비스 내 기능 또는 개인정보 보호책임자에게 서면, 전화, 전자우편을 통하여 하실 수 있으며 서비스는 이에 대해 지체없이 조치하겠습니다.
             </p>
           </div>
 
@@ -167,12 +174,12 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="bg-gray-800 p-4 rounded-lg">
               <p className="text-sm text-gray-300">▶ 개인정보 보호책임자</p>
-              <p className="text-sm text-gray-300">- 회사명: 싱잉버드</p>
-              <p className="text-sm text-gray-300">- 서비스명: Voice Memo</p>
-              <p className="text-sm text-gray-300">- 담당부서: 개발팀</p>
+              <p className="text-sm text-gray-300">- 회사명: {COMPANY_INFO.NAME}</p>
+              <p className="text-sm text-gray-300">- 서비스명: {APP_NAME.FULL}</p>
+              <p className="text-sm text-gray-300">- 담당부서: {COMPANY_INFO.DEPARTMENT}</p>
               <p className="text-sm text-gray-300">- 담당자: 황윤</p>
-              <p className="text-sm text-gray-300">- 이메일: singingbird535@gmail.com</p>
-              <p className="text-sm text-gray-300">- 전화번호: 010-2849-0490</p>
+              <p className="text-sm text-gray-300">- 이메일: {COMPANY_INFO.CONTACT.EMAIL}</p>
+              <p className="text-sm text-gray-300">- 전화번호: {COMPANY_INFO.CONTACT.PHONE}</p>
             </div>
           </div>
 
@@ -187,14 +194,12 @@ export default function PrivacyPolicyPage() {
           {/* 시행일 */}
           <div className="mt-8 pt-6 border-t border-gray-700">
             <p className="text-sm text-gray-400 text-center">
-              본 방침은 2024년 1월 1일부터 시행됩니다.
+              본 방침은 2025년 1월 1일부터 시행됩니다.
             </p>
           </div>
 
         </div>
       </div>
-
-      <BottomNavigation />
     </div>
   );
 }

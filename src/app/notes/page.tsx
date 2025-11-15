@@ -18,7 +18,7 @@ export default function MemosPage() {
   const [memos, setMemos] = useState<MemoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
-  // 메모 목록 조회 함수
+  // 노트 목록 조회 함수
   const fetchMemos = async (userIdParam: string) => {
     try {
       const response = await fetch(`/api/memo?userId=${encodeURIComponent(userIdParam)}`);
@@ -36,11 +36,11 @@ export default function MemosPage() {
     }
   };
 
-  // 메모 삭제 함수
+  // 노트 삭제 함수
   const deleteMemo = async (memoId: number) => {
     if (!userId) return;
 
-    if (!confirm('정말로 이 메모를 삭제하시겠습니까?')) {
+    if (!confirm('정말로 이 노트를 삭제하시겠습니까?')) {
       return;
     }
 
@@ -52,16 +52,16 @@ export default function MemosPage() {
       const result = await response.json();
 
       if (result.success) {
-        console.log('메모 삭제 성공');
-        // 메모 목록 새로고침
+        console.log('노트 삭제 성공');
+        // 노트 목록 새로고침
         await fetchMemos(userId);
       } else {
         console.error('Failed to delete memo:', result.message);
-        alert('메모 삭제에 실패했습니다.');
+        alert('노트 삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error deleting memo:', error);
-      alert('메모 삭제 중 오류가 발생했습니다.');
+      alert('노트 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -76,17 +76,17 @@ export default function MemosPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-20">
-      <Header title="메모 목록" />
+      <Header title="노트 목록" />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
+      <div className="pt-14 px-4 max-w-4xl mx-auto">
         {/* Header Section */}
-        <div className="mb-6">
+        <div className="mt-6 mb-6">
           <p className="text-gray-400 text-center">
-            총 {memos.length}개의 메모가 저장되어 있습니다
+            총 {memos.length}개의 노트가 저장되어 있어요.
           </p>
         </div>
 
-        {/* 메모 목록 */}
+        {/* 노트 목록 */}
         <div className="space-y-4">
           {isLoading ? (
             <div className="space-y-4">
@@ -103,13 +103,13 @@ export default function MemosPage() {
           ) : memos.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <div className="text-6xl mb-4">📝</div>
-              <p>아직 저장된 메모가 없습니다.</p>
-              <p className="text-sm mt-2">음성 녹음 페이지에서 첫 번째 메모를 만들어보세요!</p>
+              <p>아직 저장된 노트가 없습니다.</p>
+              <p className="text-sm mt-2">음성 녹음 페이지에서 첫 번째 노트를 만들어보세요!</p>
             </div>
           ) : (
             <div className="space-y-3">
               {memos.map((memo) => (
-                <MemoItem key={memo.id} memo={memo} onDelete={deleteMemo} />
+                <MemoItem key={memo.id} memo={memo} />
               ))}
             </div>
           )}
@@ -120,3 +120,4 @@ export default function MemosPage() {
     </div>
   );
 }
+

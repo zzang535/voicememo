@@ -12,7 +12,7 @@ interface HeaderProps {
 export default function Header({ title, subtitle, showDisconnect = false, onDisconnect, showBackButton = false, onBackClick }: HeaderProps) {
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700">
-      <div className="flex items-center justify-center px-4 py-3 min-h-[60px] relative">
+      <div className="flex items-center justify-center px-4 h-14 relative">
         {/* Back button (if needed) */}
         {showBackButton && onBackClick && (
           <button

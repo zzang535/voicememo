@@ -2,23 +2,23 @@
 
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import BottomNavigation from '@/components/BottomNavigation';
+import { APP_NAME, COMPANY_INFO } from '@/constants/app';
 
 export default function TermsOfServicePage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className="min-h-screen bg-gray-950 text-white">
       <Header title="이용약관" showBackButton onBackClick={() => router.back()} />
 
-      <div className="pt-20 px-4 max-w-4xl mx-auto">
-        <div className="space-y-6">
+      <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
+        <div className="mt-4 space-y-6">
 
           {/* 섹션 1: 목적 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">1. 목적</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              이 약관은 Voice Memo(이하 &quot;서비스&quot;)의 이용조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.
+              이 약관은 {APP_NAME.FULL}(이하 &quot;서비스&quot;)의 이용조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </div>
 
@@ -37,12 +37,12 @@ export default function TermsOfServicePage() {
               서비스는 다음과 같은 기능을 제공합니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>음성 녹음 및 저장 기능</li>
+              <li>음성 녹음 및 서버 저장 기능</li>
               <li>음성 인식을 통한 텍스트 변환 기능</li>
-              <li>음성 메모 관리 및 검색 기능</li>
-              <li>로컬 저장소를 활용한 데이터 보관 서비스</li>
-              <li>음성 메모 재생 및 편집 기능</li>
-              <li>기타 서비스가 추가 개발하는 음성 메모 관련 기능</li>
+              <li>음성 노트 관리 및 검색 기능</li>
+              <li>서버를 통한 데이터 동기화 및 복구 서비스</li>
+              <li>음성 노트 재생 및 편집 기능</li>
+              <li>기타 서비스가 추가 개발하는 음성 노트 관련 기능</li>
             </ul>
           </div>
 
@@ -109,13 +109,14 @@ export default function TermsOfServicePage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">8. 데이터 소유권 및 책임</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              사용자가 생성한 음성 메모에 대하여:
+              사용자가 생성한 음성 노트에 대하여:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>사용자는 음성 메모에 대한 모든 권리와 책임을 가집니다</li>
-              <li>모든 데이터는 사용자의 로컬 기기에 저장되며, 서비스는 이에 접근하지 않습니다</li>
-              <li>데이터 삭제 및 관리는 사용자가 직접 수행합니다</li>
-              <li>사용자는 음성 메모 내용에 대한 모든 법적 책임을 집니다</li>
+              <li>사용자는 음성 노트에 대한 모든 권리와 책임을 가집니다</li>
+              <li>음성 노트 및 텍스트 정보는 서버에 안전하게 저장됩니다</li>
+              <li>데이터 삭제 및 관리는 사용자가 서비스 내 기능을 통해 직접 수행합니다</li>
+              <li>서버에 저장된 데이터는 앱 삭제나 기기 변경 시에도 복구 가능합니다</li>
+              <li>사용자는 음성 노트 내용에 대한 모든 법적 책임을 집니다</li>
             </ul>
           </div>
 
@@ -126,10 +127,10 @@ export default function TermsOfServicePage() {
               서비스는 사용자의 프라이버시 보호를 위해 다음과 같이 운영됩니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>모든 음성 데이터는 사용자의 로컬 기기에만 저장됩니다</li>
-              <li>서비스는 사용자의 음성 데이터에 접근하거나 수집하지 않습니다</li>
-              <li>외부 서버로의 음성 데이터 전송은 사용자의 명시적 동의 하에만 수행됩니다</li>
-              <li>음성 인식 기능 사용 시에도 데이터는 로컬에서 처리됩니다</li>
+              <li>음성 노트 및 텍스트 정보는 암호화되어 서버에 안전하게 보관됩니다</li>
+              <li>사용자의 음성 데이터는 제3자에게 제공되지 않습니다</li>
+              <li>HTTPS 프로토콜을 통한 안전한 데이터 전송이 보장됩니다</li>
+              <li>서버 보안 시스템을 통해 무단 접근을 차단합니다</li>
             </ul>
           </div>
 
@@ -141,9 +142,9 @@ export default function TermsOfServicePage() {
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
               <li>브라우저 및 기기의 성능에 따라 서비스 품질이 달라질 수 있습니다</li>
-              <li>로컬 저장소 용량 한계로 인한 데이터 저장 제한이 있을 수 있습니다</li>
+              <li>서버 저장 용량 한계로 인한 데이터 저장 제한이 있을 수 있습니다</li>
               <li>음성 인식 정확도는 환경 및 음질에 따라 차이가 날 수 있습니다</li>
-              <li>인터넷 연결이 필요한 일부 기능은 오프라인에서 제한될 수 있습니다</li>
+              <li>인터넷 연결이 필요하며, 오프라인에서는 일부 기능이 제한됩니다</li>
             </ul>
           </div>
 
@@ -154,10 +155,10 @@ export default function TermsOfServicePage() {
               서비스는 다음에 대해 책임을 지지 않습니다:
             </p>
             <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1 leading-relaxed">
-              <li>사용자의 부주의로 인한 데이터 손실</li>
-              <li>기기 고장, 브라우저 오류 등으로 인한 서비스 중단</li>
+              <li>사용자의 부주의로 인한 데이터 삭제</li>
+              <li>기기 고장, 브라우저 오류, 네트워크 장애 등으로 인한 서비스 중단</li>
               <li>사용자가 생성한 음성 메모 내용으로 인한 법적 문제</li>
-              <li>제3자에 의한 불법적인 접근이나 데이터 유출</li>
+              <li>예측 불가능한 보안 취약점으로 인한 데이터 유출 (단, 최선의 보안 조치 제공)</li>
               <li>음성 인식 오류로 인한 텍스트 변환 부정확성</li>
             </ul>
           </div>
@@ -196,26 +197,23 @@ export default function TermsOfServicePage() {
               서비스 관련 문의사항이 있을 경우 아래로 연락주시기 바랍니다:
             </p>
             <div className="bg-gray-800 p-4 rounded-lg">
-              <p className="text-sm text-gray-300">- 회사명: 싱잉버드</p>
-              <p className="text-sm text-gray-300">- 서비스명: Voice Memo</p>
-              <p className="text-sm text-gray-300">- 담당부서: 개발팀</p>
-              <p className="text-sm text-gray-300">- 담당자: 황윤</p>
-              <p className="text-sm text-gray-300">- 이메일: singingbird535@gmail.com</p>
-              <p className="text-sm text-gray-300">- 전화번호: 010-2849-0490</p>
+              <p className="text-sm text-gray-300">- 회사명: {COMPANY_INFO.NAME}</p>
+              <p className="text-sm text-gray-300">- 서비스명: {APP_NAME.FULL}</p>
+              <p className="text-sm text-gray-300">- 담당부서: {COMPANY_INFO.DEPARTMENT}</p>
+              <p className="text-sm text-gray-300">- 이메일: {COMPANY_INFO.CONTACT.EMAIL}</p>
+              <p className="text-sm text-gray-300">- 전화번호: {COMPANY_INFO.CONTACT.PHONE}</p>
             </div>
           </div>
 
           {/* 시행일 */}
           <div className="mt-8 pt-6 border-t border-gray-700">
             <p className="text-sm text-gray-400 text-center">
-              본 약관은 2024년 1월 1일부터 시행됩니다.
+              본 약관은 2025년 1월 1일부터 시행됩니다.
             </p>
           </div>
 
         </div>
       </div>
-
-      <BottomNavigation />
     </div>
   );
 }
