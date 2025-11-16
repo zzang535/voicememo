@@ -423,7 +423,7 @@ export default function VoiceMemoPage() {
       <div className="pt-20 px-4 max-w-4xl mx-auto">
         {/* Title Section */}
         <div className="text-center mb-12">
-          <p className="text-gray-400">버튼을 눌러 음성으로 생각이나 순간을 기록하세요.</p>
+          <p className="text-gray-400">음성으로 생각이나 순간을 기록하세요.</p>
 
           {/* User ID Display */}
           {userId && (
