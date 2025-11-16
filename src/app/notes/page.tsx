@@ -105,7 +105,6 @@ export default function MemosPage() {
             <div className="text-center py-12 text-gray-500">
               <div className="text-6xl mb-4">📝</div>
               <p>아직 저장된 노트가 없습니다.</p>
-              <p className="text-sm mt-2">음성 녹음 페이지에서 첫 번째 노트를 만들어보세요!</p>
             </div>
           ) : (
             <div className="space-y-3">
