@@ -3,8 +3,8 @@
 export const COLORS = {
   // Layout 배경색
   PAGE_BG: 'bg-zinc-950',
-  HEADER_BG: 'bg-zinc-950',
-  BOTTOM_NAV_BG: 'bg-zinc-950',
+  HEADER_BG: 'bg-zinc-950/40 backdrop-blur-md',
+  BOTTOM_NAV_BG: 'bg-zinc-950/40 backdrop-blur-md',
 
   // Box 배경색
   BOX_BG: 'bg-zinc-950',

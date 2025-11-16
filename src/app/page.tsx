@@ -499,8 +499,8 @@ export default function VoiceMemoPage() {
           <div className="text-sm leading-relaxed">
             {latestMemo ? (
               <span className="text-white">
-                {latestMemo.content.length > 100
-                  ? `${latestMemo.content.substring(0, 100)}...`
+                {latestMemo.content.length > 150
+                  ? `${latestMemo.content.substring(0, 150)}...`
                   : latestMemo.content}
               </span>
             ) : (

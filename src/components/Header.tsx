@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export default function Header({ title, subtitle, showDisconnect = false, onDisconnect, showBackButton = false, onBackClick }: HeaderProps) {
   return (
-    <div className={`fixed top-0 left-0 right-0 z-40 ${COLORS.HEADER_BG} backdrop-blur-sm border-b ${COLORS.BORDER}`}>
+    <div className={`fixed top-0 left-0 right-0 z-40 ${COLORS.HEADER_BG} border-b ${COLORS.BORDER}`}>
       <div className="flex items-center justify-center px-4 h-14 relative">
         {/* Back button (if needed) */}
         {showBackButton && onBackClick && (
