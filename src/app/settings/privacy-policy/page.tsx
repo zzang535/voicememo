@@ -176,7 +176,6 @@ export default function PrivacyPolicyPage() {
             <div className={`${COLORS.BOX_BG} border ${COLORS.BORDER} p-4 rounded-lg`}>
               <p className="text-sm text-gray-300">▶ 개인정보 보호책임자</p>
               <p className="text-sm text-gray-300">- 회사명: {COMPANY_INFO.NAME}</p>
-              <p className="text-sm text-gray-300">- 서비스명: {APP_NAME.FULL}</p>
               <p className="text-sm text-gray-300">- 담당부서: {COMPANY_INFO.DEPARTMENT}</p>
               <p className="text-sm text-gray-300">- 담당자: 황윤</p>
               <p className="text-sm text-gray-300">- 이메일: {COMPANY_INFO.CONTACT.EMAIL}</p>
