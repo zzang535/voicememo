@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AlertModal from '@/components/AlertModal';
+import { COLORS } from '@/constants/colors';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white pb-20`}>
       <Header title="설정" />
 
       <div className="pt-14 px-4 max-w-4xl mx-auto">
@@ -55,7 +56,7 @@ export default function SettingsPage() {
             <div
               key={index}
               onClick={item.action}
-              className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+              className={`${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER} hover:${COLORS.BOX_BG_HOVER} transition-colors duration-200 cursor-pointer`}
             >
               <div className="flex items-center gap-4">
                 <div className="text-3xl">{item.icon}</div>

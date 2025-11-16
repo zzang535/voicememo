@@ -3,12 +3,13 @@
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { APP_NAME, COMPANY_INFO } from '@/constants/app';
+import { COLORS } from '@/constants/colors';
 
 export default function TermsOfServicePage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="이용약관" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
@@ -196,7 +197,7 @@ export default function TermsOfServicePage() {
             <p className="text-sm text-gray-300 leading-relaxed">
               서비스 관련 문의사항이 있을 경우 아래로 연락주시기 바랍니다:
             </p>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
               <p className="text-sm text-gray-300">- 회사명: {COMPANY_INFO.NAME}</p>
               <p className="text-sm text-gray-300">- 서비스명: {APP_NAME.FULL}</p>
               <p className="text-sm text-gray-300">- 담당부서: {COMPANY_INFO.DEPARTMENT}</p>
@@ -206,7 +207,7 @@ export default function TermsOfServicePage() {
           </div>
 
           {/* 시행일 */}
-          <div className="mt-8 pt-6 border-t border-gray-700">
+          <div className={`mt-8 pt-6 border-t ${COLORS.BORDER}`}>
             <p className="text-sm text-gray-400 text-center">
               본 약관은 2025년 1월 1일부터 시행됩니다.
             </p>

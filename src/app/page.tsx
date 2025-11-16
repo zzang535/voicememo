@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { getUserId, getShortUserId } from '@/utils/userUtils';
 import { RECORDING_POLICY } from '@/config/recordingPolicy';
+import { COLORS } from '@/constants/colors';
 
 interface MemoData {
   id: number;
@@ -417,7 +418,7 @@ export default function VoiceMemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white pb-20`}>
       <Header title="말노트" />
 
       <div className="pt-20 px-4 max-w-4xl mx-auto">
@@ -427,7 +428,7 @@ export default function VoiceMemoPage() {
 
           {/* User ID Display */}
           {userId && (
-            <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
+            <div className={`mt-6 inline-flex items-center gap-2 px-3 py-1 ${COLORS.BOX_BG} rounded-full`}>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-xs text-gray-300">
                 사용자 ID: {getShortUserId(userId)}
@@ -481,7 +482,7 @@ export default function VoiceMemoPage() {
         </div>
 
         {/* 최근 메모 박스 */}
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div className={`${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER}`}>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-300">최근 노트</h3>
             {latestMemo && (

@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import MemoItem from '@/components/MemoItem';
 import { getUserId } from '@/utils/userUtils';
+import { COLORS } from '@/constants/colors';
 
 interface MemoData {
   id: number;
@@ -75,7 +76,7 @@ export default function MemosPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white pb-20`}>
       <Header title="노트 목록" />
 
       <div className="pt-14 px-4 max-w-4xl mx-auto">
@@ -91,11 +92,11 @@ export default function MemosPage() {
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg p-4">
+                <div key={i} className={`${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER}`}>
                   <div className="animate-pulse">
-                    <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-full mb-1"></div>
-                    <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+                    <div className={`h-4 ${COLORS.BOX_BG_HOVER} rounded w-1/4 mb-2`}></div>
+                    <div className={`h-3 ${COLORS.BOX_BG_HOVER} rounded w-full mb-1`}></div>
+                    <div className={`h-3 ${COLORS.BOX_BG_HOVER} rounded w-3/4`}></div>
                   </div>
                 </div>
               ))}

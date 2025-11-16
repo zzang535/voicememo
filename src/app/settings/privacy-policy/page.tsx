@@ -3,12 +3,13 @@
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { APP_NAME, COMPANY_INFO } from '@/constants/app';
+import { COLORS } from '@/constants/colors';
 
 export default function PrivacyPolicyPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="개인정보처리방침" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
@@ -172,7 +173,7 @@ export default function PrivacyPolicyPage() {
             <p className="text-sm text-gray-300 leading-relaxed">
               서비스는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제를 처리하기 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.
             </p>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} border ${COLORS.BORDER} p-4 rounded-lg`}>
               <p className="text-sm text-gray-300">▶ 개인정보 보호책임자</p>
               <p className="text-sm text-gray-300">- 회사명: {COMPANY_INFO.NAME}</p>
               <p className="text-sm text-gray-300">- 서비스명: {APP_NAME.FULL}</p>
@@ -192,7 +193,7 @@ export default function PrivacyPolicyPage() {
           </div>
 
           {/* 시행일 */}
-          <div className="mt-8 pt-6 border-t border-gray-700">
+          <div className={`mt-8 pt-6 border-t ${COLORS.BORDER}`}>
             <p className="text-sm text-gray-400 text-center">
               본 방침은 2025년 1월 1일부터 시행됩니다.
             </p>

@@ -3,12 +3,13 @@
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { APP_NAME, COMPANY_INFO } from '@/constants/app';
+import { COLORS } from '@/constants/colors';
 
 export default function CustomerSupportPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="고객센터" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
@@ -17,7 +18,7 @@ export default function CustomerSupportPage() {
           {/* 연락처 정보 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">고객센터 정보</h3>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
               <div className="space-y-2">
                 <p className="text-sm text-gray-300">
                   <span className="font-medium text-white">회사명:</span> {COMPANY_INFO.NAME}
@@ -50,7 +51,7 @@ export default function CustomerSupportPage() {
 
             <div className="space-y-4">
               {/* FAQ 1 */}
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
                 <h4 className="text-md font-medium text-white mb-2">
                   Q. 음성 인식이 정확하지 않아요.
                 </h4>
@@ -61,7 +62,7 @@ export default function CustomerSupportPage() {
 
 
               {/* FAQ 3 */}
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
                 <h4 className="text-md font-medium text-white mb-2">
                   Q. 음성 메모를 백업하고 싶어요.
                 </h4>
@@ -71,7 +72,7 @@ export default function CustomerSupportPage() {
               </div>
 
               {/* FAQ 4 */}
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
                 <h4 className="text-md font-medium text-white mb-2">
                   Q. 마이크 권한을 허용했는데 녹음이 안돼요.
                 </h4>
@@ -84,7 +85,7 @@ export default function CustomerSupportPage() {
               </div>
 
               {/* FAQ 5 */}
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
                 <h4 className="text-md font-medium text-white mb-2">
                   Q. 서비스는 무료인가요?
                 </h4>
@@ -98,7 +99,7 @@ export default function CustomerSupportPage() {
           {/* 문의하기 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">더 많은 도움이 필요하신가요?</h3>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
               <p className="text-sm text-gray-300 leading-relaxed mb-4">
                 FAQ에서 답변을 찾지 못한 질문이 있으시면, 위의 연락처로 문의해 주세요. 최대한 빠르게 답변드리겠습니다.
               </p>

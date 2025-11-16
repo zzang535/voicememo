@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/AlertModal';
 import { getUserId } from '@/utils/userUtils';
+import { COLORS } from '@/constants/colors';
 
 interface MemoData {
   id: number;
@@ -153,14 +154,14 @@ export default function MemoEditPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white">
+      <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
         <Header title="노트 수정" />
         <div className="pt-20 px-4 max-w-4xl mx-auto">
-          <div className="bg-gray-800 rounded-lg p-6">
+          <div className={`${COLORS.BOX_BG} rounded-lg p-6 border ${COLORS.BORDER}`}>
             <div className="animate-pulse">
-              <div className="h-4 bg-gray-700 rounded w-1/4 mb-4"></div>
-              <div className="h-32 bg-gray-700 rounded mb-4"></div>
-              <div className="h-10 bg-gray-700 rounded w-1/3"></div>
+              <div className={`h-4 ${COLORS.BOX_BG_HOVER} rounded w-1/4 mb-4`}></div>
+              <div className={`h-32 ${COLORS.BOX_BG_HOVER} rounded mb-4`}></div>
+              <div className={`h-10 ${COLORS.BOX_BG_HOVER} rounded w-1/3`}></div>
             </div>
           </div>
         </div>
@@ -170,7 +171,7 @@ export default function MemoEditPage() {
 
   if (!memo) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white">
+      <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
         <Header title="노트 수정" />
         <div className="pt-20 px-4 max-w-4xl mx-auto">
           <div className="text-center py-12 text-gray-500">
@@ -183,7 +184,7 @@ export default function MemoEditPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-950 text-white flex flex-col">
+    <div className={`fixed inset-0 ${COLORS.PAGE_BG} text-white flex flex-col`}>
       <Header
         title="노트 수정"
         showBackButton={true}
@@ -207,7 +208,7 @@ export default function MemoEditPage() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="flex-1 w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+            className={`flex-1 w-full p-3 ${COLORS.BOX_BG} border ${COLORS.BORDER} rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none`}
             placeholder="노트 내용을 입력하세요..."
           />
         </div>

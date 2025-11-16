@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { COLORS } from '@/constants/colors';
 
 interface MemoItemProps {
   memo: {
@@ -25,7 +26,7 @@ export default function MemoItem({ memo }: MemoItemProps) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 transition-all hover:bg-gray-700">
+    <div className={`${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER} transition-all hover:${COLORS.BOX_BG_HOVER}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="text-sm text-gray-500">
           #{memo.id} • {new Date(memo.created_at).toLocaleString('ko-KR')}

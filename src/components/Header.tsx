@@ -1,5 +1,7 @@
 'use client';
 
+import { COLORS } from '@/constants/colors';
+
 interface HeaderProps {
   title: string;
   subtitle?: string;
@@ -11,13 +13,13 @@ interface HeaderProps {
 
 export default function Header({ title, subtitle, showDisconnect = false, onDisconnect, showBackButton = false, onBackClick }: HeaderProps) {
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700">
+    <div className={`fixed top-0 left-0 right-0 z-40 ${COLORS.HEADER_BG} backdrop-blur-sm border-b ${COLORS.BORDER}`}>
       <div className="flex items-center justify-center px-4 h-14 relative">
         {/* Back button (if needed) */}
         {showBackButton && onBackClick && (
           <button
             onClick={onBackClick}
-            className="absolute left-4 w-10 h-10 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center"
+            className={`absolute left-4 w-10 h-10 ${COLORS.BOX_BG} border ${COLORS.BORDER} hover:${COLORS.BOX_BG_HOVER} text-white rounded-lg transition-colors flex items-center justify-center`}
             title="뒤로가기"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

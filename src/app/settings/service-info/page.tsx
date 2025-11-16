@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import { APP_NAME, COMPANY_INFO, APP_INFO } from '@/constants/app';
+import { COLORS } from '@/constants/colors';
 
 interface VersionInfo {
   version: string;
@@ -49,14 +50,14 @@ export default function VersionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="서비스 정보" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
         <div className="mt-4 space-y-6">
           {/* App Version Info */}
           <div className="text-center">
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className={`${COLORS.BOX_BG} rounded-lg p-6 border ${COLORS.BORDER}`}>
               <h3 className="text-sm font-semibold text-gray-300 mb-4">앱 버전</h3>
               {versionData ? (
                 <>
@@ -77,7 +78,7 @@ export default function VersionPage() {
           {/* 서비스 정보 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">서비스 정보</h3>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-white">서비스명</span>
@@ -106,7 +107,7 @@ export default function VersionPage() {
           {/* 기능 정보 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">주요 기능</h3>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
@@ -131,7 +132,7 @@ export default function VersionPage() {
           {/* 라이선스 정보 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">라이선스</h3>
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className={`${COLORS.BOX_BG} p-4 rounded-lg border ${COLORS.BORDER}`}>
               <p className="text-sm text-gray-300 leading-relaxed">
                 이 서비스는 개인 및 상업적 목적으로 무료로 사용할 수 있습니다.
               </p>

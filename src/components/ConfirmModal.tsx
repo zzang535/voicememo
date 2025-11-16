@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { COLORS } from '@/constants/colors';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -53,7 +54,7 @@ export default function ConfirmModal({
       />
 
       {/* 모달 컨텐츠 */}
-      <div className={`relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 transition-all duration-200 ${
+      <div className={`relative ${COLORS.MODAL_BG} rounded-lg border ${COLORS.BORDER} shadow-xl max-w-md w-full p-6 transition-all duration-200 ${
         isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
       }`}>
         {title && (

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { COLORS } from '@/constants/colors';
 
 interface NavItem {
   href: string;
@@ -31,7 +32,7 @@ export default function BottomNavigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-50">
+    <nav className={`fixed bottom-0 left-0 right-0 ${COLORS.BOTTOM_NAV_BG} border-t ${COLORS.BORDER} z-50`}>
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           // 루트 경로(/) 또는 /voicememo 모두 홈으로 간주

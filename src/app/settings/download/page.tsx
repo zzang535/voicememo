@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { getUserId } from '@/utils/userUtils';
+import { COLORS } from '@/constants/colors';
 
 interface MemoData {
   id: number;
@@ -114,7 +115,7 @@ export default function DownloadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="데이터 다운로드" showBackButton onBackClick={() => router.back()} />
 
       <div className="pt-20 px-4 max-w-4xl mx-auto">
@@ -127,7 +128,7 @@ export default function DownloadPage() {
           <button
             onClick={downloadExcel}
             disabled={isLoading}
-            className={`w-full bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer ${
+            className={`w-full ${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER} hover:${COLORS.BOX_BG_HOVER} transition-colors duration-200 cursor-pointer ${
               isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -153,7 +154,7 @@ export default function DownloadPage() {
           <button
             onClick={downloadJson}
             disabled={isLoading}
-            className={`w-full bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer ${
+            className={`w-full ${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER} hover:${COLORS.BOX_BG_HOVER} transition-colors duration-200 cursor-pointer ${
               isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -178,7 +179,7 @@ export default function DownloadPage() {
 
         {isLoading && (
           <div className="mt-8 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
+            <div className={`inline-flex items-center gap-2 px-4 py-2 ${COLORS.BOX_BG} rounded-lg border ${COLORS.BORDER}`}>
               <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-gray-300">다운로드 준비 중...</span>
             </div>
