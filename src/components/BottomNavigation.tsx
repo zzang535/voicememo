@@ -11,7 +11,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    href: '/voicememo',
+    href: '/',
     icon: '🎤',
     label: '음성노트'
   },
@@ -34,7 +34,10 @@ export default function BottomNavigation() {
     <nav className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-50">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          // 루트 경로(/) 또는 /voicememo 모두 홈으로 간주
+          const isActive = item.href === '/'
+            ? (pathname === '/' || pathname === '/voicememo')
+            : pathname === item.href;
 
           return (
             <Link
