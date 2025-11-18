@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
   {
     href: '/',
     icon: '🎤',
-    label: '음성노트'
+    label: '홈'
   },
   {
     href: '/notes',
@@ -44,7 +44,7 @@ export default function BottomNavigation() {
             <Link
               key={item.href}
               href={item.href}
-              className="relative flex flex-col items-center justify-center py-3 px-4 transition-colors duration-200"
+              className="relative flex flex-col items-center justify-center py-2 px-4 transition-colors duration-200 min-w-[70px]"
             >
               <div className={`text-2xl transition-all duration-200 ${
                 isActive
@@ -53,9 +53,13 @@ export default function BottomNavigation() {
               }`}>
                 {item.icon}
               </div>
-              {isActive && (
-                <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
-              )}
+              <span className={`text-xs mt-1 transition-colors duration-200 ${
+                isActive
+                  ? 'text-blue-400 font-medium'
+                  : 'text-gray-400'
+              }`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}
