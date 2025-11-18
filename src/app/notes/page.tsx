@@ -77,9 +77,9 @@ export default function MemosPage() {
 
   return (
     <div className={`min-h-screen ${COLORS.PAGE_BG} text-white pb-20`}>
-      <Header title="노트 목록" />
+      <Header title="노트목록" />
 
-      <div className="pt-14 px-4 max-w-4xl mx-auto">
+      <div className="pt-[60px] px-4 max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="mt-6 mb-6">
           <p className="text-gray-400 text-center">

@@ -53,7 +53,7 @@ export default function VersionPage() {
     <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="서비스 정보" showBackButton onBackClick={() => router.back()} />
 
-      <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
+      <div className="pt-[60px] px-4 pb-8 max-w-4xl mx-auto">
         <div className="mt-4 space-y-6">
           {/* App Version Info */}
           <div className="text-center">

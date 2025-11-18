@@ -48,7 +48,7 @@ export default function SettingsPage() {
     <div className={`min-h-screen ${COLORS.PAGE_BG} text-white pb-20`}>
       <Header title="설정" />
 
-      <div className="pt-14 px-4 max-w-4xl mx-auto">
+      <div className="pt-[60px] px-4 max-w-4xl mx-auto">
 
         {/* Settings Items */}
         <div className="mt-4 space-y-4">

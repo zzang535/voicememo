@@ -12,7 +12,7 @@ export default function CustomerSupportPage() {
     <div className={`min-h-screen ${COLORS.PAGE_BG} text-white`}>
       <Header title="고객센터" showBackButton onBackClick={() => router.back()} />
 
-      <div className="pt-14 px-4 pb-8 max-w-4xl mx-auto">
+      <div className="pt-[60px] px-4 pb-8 max-w-4xl mx-auto">
         <div className="mt-4 space-y-6">
 
           {/* 연락처 정보 */}
