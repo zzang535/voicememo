@@ -6,6 +6,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { getUserId, getShortUserId } from '@/utils/userUtils';
 import { RECORDING_POLICY } from '@/config/recordingPolicy';
 import { COLORS } from '@/constants/colors';
+import { APP_NAME } from '@/constants/app';
 
 interface MemoData {
   id: number;
@@ -419,7 +420,7 @@ export default function VoiceMemoPage() {
 
   return (
     <div className={`min-h-screen ${COLORS.PAGE_BG} text-white pb-20`}>
-      <Header title="말노트" />
+      <Header title={APP_NAME.KO} />
 
       <div className="pt-20 px-4 max-w-4xl mx-auto">
         {/* Title Section */}

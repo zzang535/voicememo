@@ -1,9 +1,9 @@
 // 앱 관련 상수
 
 export const APP_NAME = {
-  KO: '말노트',
-  EN: 'Say Note',
-  FULL: '말노트 (Say Note)'
+  KO: '세이노트',
+  EN: 'Saynote',
+  FULL: '세이노트 (Saynote)'
 } as const;
 
 export const COMPANY_INFO = {
