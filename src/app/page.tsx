@@ -139,14 +139,17 @@ export default function VoiceMemoPage() {
 
   // Initialize user ID and fetch data on component mount
   useEffect(() => {
-    // 사용자 ID 초기화
-    const initUserId = getUserId();
-    setUserId(initUserId);
-    console.log('사용자 ID 초기화:', initUserId);
+    // 사용자 ID 초기화 (async 함수)
+    const initializeUserId = async () => {
+      const initUserId = await getUserId();
+      setUserId(initUserId);
+      console.log('사용자 ID 초기화:', initUserId);
 
+      // 메모 목록 조회
+      await fetchMemos(initUserId);
+    };
 
-    // 메모 목록 조회
-    fetchMemos(initUserId);
+    initializeUserId();
   }, []);
 
   // Dots 애니메이션 관리
