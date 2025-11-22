@@ -106,6 +106,36 @@ export default function VoiceMemoPage() {
     }
   };
 
+  // 개발용 샘플 데이터 삽입
+  const insertSampleData = async () => {
+    if (!userId) return;
+
+    const confirmed = confirm('샘플 노트 데이터를 삽입하시겠습니까?');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/dev/insert-samples', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ ${result.message}`);
+        await fetchMemos(userId);
+      } else {
+        alert(`❌ ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error inserting sample data:', error);
+      alert('❌ 샘플 데이터 삽입 중 오류가 발생했습니다.');
+    }
+  };
+
 
   // Initialize user ID and fetch data on component mount
   useEffect(() => {
@@ -514,6 +544,17 @@ export default function VoiceMemoPage() {
       </div>
 
       <BottomNavigation />
+
+      {/* 개발 환경 전용 샘플 데이터 삽입 버튼 */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={insertSampleData}
+          className="fixed bottom-24 right-4 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50"
+          title="샘플 데이터 삽입"
+        >
+          <span className="text-2xl">📝</span>
+        </button>
+      )}
     </div>
   );
 }
