@@ -20,8 +20,11 @@ export default function DownloadPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const initUserId = getUserId();
-    setUserId(initUserId);
+    const initializeUserId = async () => {
+      const initUserId = await getUserId();
+      setUserId(initUserId);
+    };
+    initializeUserId();
   }, []);
 
   // 메모 데이터 가져오기
