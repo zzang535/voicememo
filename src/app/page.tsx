@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { getUserId, getShortUserId } from '@/utils/userUtils';
+import { getUserId } from '@/utils/userUtils';
+import { getDisplayUserId } from '@/policies/userIdDisplayPolicy';
 import { RECORDING_POLICY } from '@/config/recordingPolicy';
 import { COLORS } from '@/constants/colors';
 import { APP_NAME } from '@/constants/app';
@@ -465,7 +466,7 @@ export default function VoiceMemoPage() {
             <div className={`mt-6 inline-flex items-center gap-2 px-3 py-1 ${COLORS.BOX_BG} rounded-full`}>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-xs text-gray-300">
-                사용자 ID: {getShortUserId(userId)}
+                사용자 ID: {getDisplayUserId(userId)}
               </span>
             </div>
           )}
