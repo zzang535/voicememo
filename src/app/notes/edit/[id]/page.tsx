@@ -33,8 +33,11 @@ export default function MemoEditPage() {
 
   // 사용자 ID 초기화
   useEffect(() => {
-    const initUserId = getUserId();
-    setUserId(initUserId);
+    const initializeUserId = async () => {
+      const initUserId = await getUserId();
+      setUserId(initUserId);
+    };
+    initializeUserId();
   }, []);
 
   // 노트 조회

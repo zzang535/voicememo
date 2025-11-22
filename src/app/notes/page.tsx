@@ -37,7 +37,8 @@ export default function MemosPage() {
     }
   };
 
-  // 노트 삭제 함수
+  // 노트 삭제 함수 (미사용 - 추후 사용 예정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const deleteMemo = async (memoId: number) => {
     if (!userId) return;
 
@@ -68,11 +69,14 @@ export default function MemosPage() {
 
   // 컴포넌트 마운트 시 데이터 조회
   useEffect(() => {
-    const initUserId = getUserId();
-    setUserId(initUserId);
-    console.log('사용자 ID 초기화:', initUserId);
+    const initializeUserId = async () => {
+      const initUserId = await getUserId();
+      setUserId(initUserId);
+      console.log('사용자 ID 초기화:', initUserId);
 
-    fetchMemos(initUserId);
+      await fetchMemos(initUserId);
+    };
+    initializeUserId();
   }, []);
 
   return (
