@@ -44,3 +44,7 @@ service-account-key.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database backups
+sql/backups/
+*.sql.backup

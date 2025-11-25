@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/db';
+import { MemoData } from '@/types/memo';
 
 // GET: 사용자의 메모 목록 조회 또는 개별 메모 조회
 export async function GET(request: NextRequest) {
@@ -20,13 +21,7 @@ export async function GET(request: NextRequest) {
       const result = await executeQuery(
         'SELECT * FROM memo WHERE id = ? AND user_id = ?',
         [memoId, userId]
-      ) as Array<{
-        id: number;
-        user_id: string;
-        content: string;
-        created_at: string;
-        updated_at: string;
-      }>;
+      ) as MemoData[];
 
       if (result.length === 0) {
         return NextResponse.json({
@@ -44,7 +39,7 @@ export async function GET(request: NextRequest) {
       const result = await executeQuery(
         'SELECT * FROM memo WHERE user_id = ? ORDER BY created_at DESC',
         [userId]
-      );
+      ) as MemoData[];
 
       return NextResponse.json({
         success: true,
@@ -67,7 +62,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, content } = body;
+    const { userId, content, tag1, tag2 } = body;
 
     if (!userId || !content) {
       return NextResponse.json({
@@ -84,8 +79,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await executeQuery(
-      'INSERT INTO memo (user_id, content) VALUES (?, ?)',
-      [userId, content.trim()]
+      'INSERT INTO memo (user_id, content, tag1, tag2) VALUES (?, ?, ?, ?)',
+      [userId, content.trim(), tag1 || null, tag2 || null]
     ) as { insertId: number };
 
     return NextResponse.json({
@@ -95,6 +90,8 @@ export async function POST(request: NextRequest) {
         id: result.insertId,
         user_id: userId,
         content: content.trim(),
+        tag1: tag1 || null,
+        tag2: tag2 || null,
         created_at: new Date().toISOString()
       }
     });
@@ -114,7 +111,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, userId, content } = body;
+    const { id, userId, content, tag1, tag2 } = body;
 
     if (!id || !userId || !content) {
       return NextResponse.json({
@@ -132,8 +129,8 @@ export async function PUT(request: NextRequest) {
 
     // 해당 사용자의 메모인지 확인 후 수정
     const result = await executeQuery(
-      'UPDATE memo SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-      [content.trim(), id, userId]
+      'UPDATE memo SET content = ?, tag1 = ?, tag2 = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [content.trim(), tag1 || null, tag2 || null, id, userId]
     ) as { affectedRows: number };
 
     if (result.affectedRows === 0) {
