@@ -79,6 +79,39 @@ export default function MemoEditPage() {
 
     setIsSaving(true);
     try {
+      // OpenAI 분석 처리
+      console.log('🤖 OpenAI 분석 시작...');
+      let analysisResult;
+
+      try {
+        const analysisResponse = await fetch('/api/analyze-memo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: content.trim()
+          })
+        });
+
+        if (analysisResponse.ok) {
+          const analysisData = await analysisResponse.json();
+          if (analysisData.success) {
+            analysisResult = analysisData.data;
+            console.log('✅ OpenAI 분석 완료:', analysisResult);
+            if (analysisData.test_mode) {
+              console.log('⚠️ 테스트 모드로 실행됨 (OPENAI_API_KEY 미설정)');
+            }
+          }
+        } else {
+          console.error('❌ OpenAI 분석 실패:', await analysisResponse.json());
+        }
+      } catch (error) {
+        console.error('❌ OpenAI 분석 오류:', error);
+        // 분석 실패해도 메모는 저장
+      }
+
+      // 노트 수정 (분석 결과 포함)
       const response = await fetch('/api/memo', {
         method: 'PUT',
         headers: {
@@ -87,7 +120,11 @@ export default function MemoEditPage() {
         body: JSON.stringify({
           id: memo.id,
           userId: userId,
-          content: content.trim()
+          content: content.trim(),
+          thought: analysisResult?.thought,
+          emotions: analysisResult?.emotions,
+          core_needs: analysisResult?.core_needs,
+          summary: analysisResult?.summary
         }),
       });
 
