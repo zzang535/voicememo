@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MEMO_ANALYSIS_SYSTEM_PROMPT } from '@/constants/prompts';
 
 export const runtime = 'nodejs';
 
@@ -65,19 +66,7 @@ async function analyzeWithOpenAI(content: string, apiKey: string) {
       messages: [
         {
           role: 'system',
-          content: `당신은 심리 상담 전문가입니다. 사용자의 음성 메모를 분석하여 다음을 추출하세요:
-1. thought (자동생각): 메모에서 드러나는 주요 생각이나 인지 패턴
-2. emotions (감정들): 감정을 나타내는 단어 배열 (3-5개)
-3. core_needs (핵심 욕구들): 근본적으로 원하는 것을 나타내는 단어 배열 (3-5개)
-4. summary (요약): 메모 내용을 1-2문장으로 요약
-
-반드시 JSON 형식으로만 응답하세요:
-{
-  "thought": "자동생각 내용",
-  "emotions": ["감정1", "감정2", "감정3"],
-  "core_needs": ["욕구1", "욕구2", "욕구3"],
-  "summary": "요약 내용"
-}`
+          content: MEMO_ANALYSIS_SYSTEM_PROMPT
         },
         {
           role: 'user',
