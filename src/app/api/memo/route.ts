@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, content, tag1, tag2 } = body;
+    const { userId, content, thought, emotions, core_needs, summary } = body;
 
     if (!userId || !content) {
       return NextResponse.json({
@@ -78,9 +78,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // JSON 배열을 문자열로 변환 (MySQL JSON 컬럼에 저장)
+    const emotionsJson = emotions ? JSON.stringify(emotions) : null;
+    const coreNeedsJson = core_needs ? JSON.stringify(core_needs) : null;
+
     const result = await executeQuery(
-      'INSERT INTO memo (user_id, content, tag1, tag2) VALUES (?, ?, ?, ?)',
-      [userId, content.trim(), tag1 || null, tag2 || null]
+      'INSERT INTO memo (user_id, content, thought, emotions, core_needs, summary) VALUES (?, ?, ?, ?, ?, ?)',
+      [
+        userId,
+        content.trim(),
+        thought || null,
+        emotionsJson,
+        coreNeedsJson,
+        summary || null
+      ]
     ) as { insertId: number };
 
     return NextResponse.json({
@@ -90,8 +101,10 @@ export async function POST(request: NextRequest) {
         id: result.insertId,
         user_id: userId,
         content: content.trim(),
-        tag1: tag1 || null,
-        tag2: tag2 || null,
+        thought: thought || null,
+        emotions: emotions || null,
+        core_needs: core_needs || null,
+        summary: summary || null,
         created_at: new Date().toISOString()
       }
     });
@@ -111,7 +124,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, userId, content, tag1, tag2 } = body;
+    const { id, userId, content, thought, emotions, core_needs, summary } = body;
 
     if (!id || !userId || !content) {
       return NextResponse.json({
@@ -127,10 +140,14 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // JSON 배열을 문자열로 변환 (MySQL JSON 컬럼에 저장)
+    const emotionsJson = emotions ? JSON.stringify(emotions) : null;
+    const coreNeedsJson = core_needs ? JSON.stringify(core_needs) : null;
+
     // 해당 사용자의 메모인지 확인 후 수정
     const result = await executeQuery(
-      'UPDATE memo SET content = ?, tag1 = ?, tag2 = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-      [content.trim(), tag1 || null, tag2 || null, id, userId]
+      'UPDATE memo SET content = ?, thought = ?, emotions = ?, core_needs = ?, summary = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [content.trim(), thought || null, emotionsJson, coreNeedsJson, summary || null, id, userId]
     ) as { affectedRows: number };
 
     if (result.affectedRows === 0) {

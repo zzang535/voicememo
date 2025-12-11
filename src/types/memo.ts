@@ -6,8 +6,10 @@ export interface MemoData {
   id: number;
   user_id: string;
   content: string;
-  tag1?: string | null;  // 첫 번째 감정 태그 코드 (예: MILD_ANXIETY)
-  tag2?: string | null;  // 두 번째 감정 태그 코드 (예: MENTAL_CLARITY)
+  thought?: string | null;  // 자동생각 내용
+  emotions?: string[] | null;  // 연관된 감정들 (배열)
+  core_needs?: string[] | null;  // 핵심 욕구들 (배열)
+  summary?: string | null;  // 메모 요약
   created_at: string;
   updated_at: string;
 }
@@ -18,8 +20,10 @@ export interface MemoData {
 export interface CreateMemoRequest {
   userId: string;
   content: string;
-  tag1?: string;
-  tag2?: string;
+  thought?: string;
+  emotions?: string[];
+  core_needs?: string[];
+  summary?: string;
 }
 
 /**
@@ -29,6 +33,8 @@ export interface UpdateMemoRequest {
   id: number;
   userId: string;
   content: string;
-  tag1?: string;
-  tag2?: string;
+  thought?: string;
+  emotions?: string[];
+  core_needs?: string[];
+  summary?: string;
 }

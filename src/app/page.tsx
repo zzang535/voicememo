@@ -75,7 +75,15 @@ export default function VoiceMemoPage() {
   };
 
   // 메모 저장 함수
-  const saveMemo = async (content: string) => {
+  const saveMemo = async (
+    content: string,
+    analysis?: {
+      thought?: string;
+      emotions?: string[];
+      core_needs?: string[];
+      summary?: string;
+    }
+  ) => {
     if (!userId || !content.trim()) return;
 
     try {
@@ -86,7 +94,11 @@ export default function VoiceMemoPage() {
         },
         body: JSON.stringify({
           userId: userId,
-          content: content.trim()
+          content: content.trim(),
+          thought: analysis?.thought,
+          emotions: analysis?.emotions,
+          core_needs: analysis?.core_needs,
+          summary: analysis?.summary
         }),
       });
 
@@ -290,9 +302,41 @@ export default function VoiceMemoPage() {
       if (text && text.trim()) {
         console.log('📄 텍스트 변환 완료:', text.trim());
 
-        // 즉시 저장 처리
+        // OpenAI 분석 처리
+        console.log('🤖 OpenAI 분석 시작...');
+        let analysisResult;
+
+        try {
+          const analysisResponse = await fetch('/api/analyze-memo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content: text.trim()
+            })
+          });
+
+          if (analysisResponse.ok) {
+            const analysisData = await analysisResponse.json();
+            if (analysisData.success) {
+              analysisResult = analysisData.data;
+              console.log('✅ OpenAI 분석 완료:', analysisResult);
+              if (analysisData.test_mode) {
+                console.log('⚠️ 테스트 모드로 실행됨 (OPENAI_API_KEY 미설정)');
+              }
+            }
+          } else {
+            console.error('❌ OpenAI 분석 실패:', await analysisResponse.json());
+          }
+        } catch (error) {
+          console.error('❌ OpenAI 분석 오류:', error);
+          // 분석 실패해도 메모는 저장
+        }
+
+        // 즉시 저장 처리 (분석 결과 포함)
         console.log('💾 메모 자동 저장 시작...');
-        await saveMemo(text.trim());
+        await saveMemo(text.trim(), analysisResult);
         console.log('✅ 메모 저장 완료');
 
         // 완료 상태로 변경
@@ -477,40 +521,38 @@ export default function VoiceMemoPage() {
           <button
             onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
             disabled={recordingStatus === 'processing' || recordingStatus === 'completed' || recordingStatus === 'failed'}
-            className={`w-40 h-40 rounded-full border-4 transition-all duration-200 ${
-              recordingStatus === 'recording'
-                ? 'bg-red-600 border-red-400 animate-pulse'
-                : recordingStatus === 'processing'
+            className={`w-40 h-40 rounded-full border-4 transition-all duration-200 ${recordingStatus === 'recording'
+              ? 'bg-red-600 border-red-400 animate-pulse'
+              : recordingStatus === 'processing'
                 ? 'bg-yellow-600 border-yellow-400'
                 : recordingStatus === 'completed'
-                ? 'bg-green-600 border-green-400'
-                : recordingStatus === 'failed'
-                ? 'bg-red-800 border-red-500'
-                : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
-            } ${(recordingStatus === 'processing' || recordingStatus === 'completed' || recordingStatus === 'failed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  ? 'bg-green-600 border-green-400'
+                  : recordingStatus === 'failed'
+                    ? 'bg-red-800 border-red-500'
+                    : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
+              } ${(recordingStatus === 'processing' || recordingStatus === 'completed' || recordingStatus === 'failed') ? 'cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center">
               <div className="text-5xl mb-3">
                 {recordingStatus === 'recording' ? '🎤' :
-                 recordingStatus === 'processing' ? '⏳' :
-                 recordingStatus === 'completed' ? '✅' :
-                 recordingStatus === 'failed' ? '❌' : '🎤'}
+                  recordingStatus === 'processing' ? '⏳' :
+                    recordingStatus === 'completed' ? '✅' :
+                      recordingStatus === 'failed' ? '❌' : '🎤'}
               </div>
               <div className="text-sm font-semibold">
                 {recordingStatus === 'recording' && remainingTime !== null ? (
-                  <span className={`tabular-nums ${
-                    remainingTime <= RECORDING_POLICY.DANGER_THRESHOLD
-                      ? 'text-red-200'
-                      : remainingTime <= RECORDING_POLICY.WARNING_THRESHOLD
+                  <span className={`tabular-nums ${remainingTime <= RECORDING_POLICY.DANGER_THRESHOLD
+                    ? 'text-red-200'
+                    : remainingTime <= RECORDING_POLICY.WARNING_THRESHOLD
                       ? 'text-yellow-200'
                       : 'text-green-200'
-                  }`}>
+                    }`}>
                     {Math.floor(remainingTime / 60)}:{String(remainingTime % 60).padStart(2, '0')}
                   </span>
                 ) : recordingStatus === 'recording' ? '녹음 중...' :
-                 recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
-                 recordingStatus === 'completed' ? '완료!' :
-                 recordingStatus === 'failed' ? '실패' : '녹음 시작'}
+                  recordingStatus === 'processing' ? `처리 중${'.'.repeat(dotCount)}` :
+                    recordingStatus === 'completed' ? '완료!' :
+                      recordingStatus === 'failed' ? '실패' : '녹음 시작'}
               </div>
             </div>
           </button>
