@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { COLORS } from '@/constants/colors';
+import ContentBox from '@/components/ContentBox';
 import { getEmotionStyle } from '@/constants/automaticThoughts';
 
 interface MemoItemProps {
@@ -9,6 +9,7 @@ interface MemoItemProps {
     id: number;
     user_id: string;
     content: string;
+    summary?: string | null;
     emotions?: string[] | null;
     created_at: string;
     updated_at: string;
@@ -28,17 +29,23 @@ export default function MemoItem({ memo }: MemoItemProps) {
   };
 
   return (
-    <div
-      onClick={handleClick}
-      className={`${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER} transition-all hover:${COLORS.BOX_BG_HOVER} cursor-pointer`}
-    >
+    <ContentBox onClick={handleClick} clickable>
       <div className="mb-2">
         <div className="text-sm text-gray-500">
           #{memo.id} • {new Date(memo.created_at).toLocaleString('ko-KR')}
         </div>
       </div>
-      <p className="text-white text-sm leading-relaxed mb-3">
-        {getPreviewText(memo.content)}
+
+      {/* 요약 (타이틀) */}
+      {memo.summary && (
+        <h3 className="text-white text-sm font-semibold mb-2">
+          {memo.summary}
+        </h3>
+      )}
+
+      {/* 내용 미리보기 */}
+      <p className="text-gray-400 text-sm leading-relaxed mb-3 line-clamp-5">
+        {memo.content}
       </p>
 
       {/* 감정 태그 */}
@@ -62,6 +69,6 @@ export default function MemoItem({ memo }: MemoItemProps) {
           })}
         </div>
       )}
-    </div>
+    </ContentBox>
   );
 }

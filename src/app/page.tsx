@@ -9,11 +9,13 @@ import { getDisplayUserId } from '@/policies/userIdDisplayPolicy';
 import { RECORDING_POLICY } from '@/config/recordingPolicy';
 import { COLORS } from '@/constants/colors';
 import { APP_NAME } from '@/constants/app';
+import { getEmotionStyle } from '@/constants/automaticThoughts';
 
 interface MemoData {
   id: number;
   user_id: string;
   content: string;
+  emotions?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -575,19 +577,39 @@ export default function VoiceMemoPage() {
             ) : undefined
           }
         >
-          <div className="text-sm leading-relaxed">
-            {latestMemo ? (
-              <span className="text-white">
-                {latestMemo.content.length > 150
-                  ? `${latestMemo.content.substring(0, 150)}...`
-                  : latestMemo.content}
-              </span>
-            ) : (
-              <span className="text-gray-500 italic">
-                작성된 노트가 없습니다
-              </span>
-            )}
-          </div>
+          {latestMemo ? (
+            <>
+              <p className="text-white text-sm leading-relaxed mb-3 line-clamp-3">
+                {latestMemo.content}
+              </p>
+
+              {/* 감정 태그 */}
+              {latestMemo.emotions && latestMemo.emotions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {latestMemo.emotions.map((emotion, index) => {
+                    const style = getEmotionStyle(emotion);
+                    return (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                        style={{
+                          color: style.color,
+                          backgroundColor: style.bgColor,
+                        }}
+                      >
+                        <span className="text-xs">{style.icon}</span>
+                        <span>{emotion}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="text-gray-500 italic text-sm">
+              작성된 노트가 없습니다
+            </span>
+          )}
         </ContentBox>
       </div>
 

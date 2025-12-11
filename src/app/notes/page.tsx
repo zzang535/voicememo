@@ -11,6 +11,7 @@ interface MemoData {
   id: number;
   user_id: string;
   content: string;
+  summary?: string | null;
   emotions?: string[] | null;
   created_at: string;
   updated_at: string;

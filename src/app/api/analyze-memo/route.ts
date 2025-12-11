@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MEMO_ANALYSIS_SYSTEM_PROMPT_V2 } from '@/constants/promptsV2';
+import { MEMO_ANALYSIS_SYSTEM_PROMPT_V3 } from '@/constants/promptsV3';
 
 export const runtime = 'nodejs';
 
@@ -66,7 +66,7 @@ async function analyzeWithOpenAI(content: string, apiKey: string) {
       messages: [
         {
           role: 'system',
-          content: MEMO_ANALYSIS_SYSTEM_PROMPT_V2
+          content: MEMO_ANALYSIS_SYSTEM_PROMPT_V3
         },
         {
           role: 'user',
