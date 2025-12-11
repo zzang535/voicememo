@@ -9,9 +9,10 @@ interface HeaderProps {
   onDisconnect?: () => void;
   showBackButton?: boolean;
   onBackClick?: () => void;
+  rightButton?: React.ReactNode;
 }
 
-export default function Header({ title, subtitle, showDisconnect = false, onDisconnect, showBackButton = false, onBackClick }: HeaderProps) {
+export default function Header({ title, subtitle, showDisconnect = false, onDisconnect, showBackButton = false, onBackClick, rightButton }: HeaderProps) {
   return (
     <div className={`fixed top-0 left-0 right-0 z-40 ${COLORS.HEADER_BG} border-b ${COLORS.BORDER}`}>
       <div className="flex items-center justify-center px-4 h-[60px] relative">
@@ -53,6 +54,13 @@ export default function Header({ title, subtitle, showDisconnect = false, onDisc
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        )}
+
+        {/* Custom right button */}
+        {rightButton && (
+          <div className="absolute right-4">
+            {rightButton}
+          </div>
         )}
       </div>
     </div>

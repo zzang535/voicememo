@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import ContentBox from '@/components/ContentBox';
 import { getUserId } from '@/utils/userUtils';
 import { getDisplayUserId } from '@/policies/userIdDisplayPolicy';
 import { RECORDING_POLICY } from '@/config/recordingPolicy';
@@ -559,10 +560,10 @@ export default function VoiceMemoPage() {
         </div>
 
         {/* 최근 메모 박스 */}
-        <div className={`${COLORS.BOX_BG} rounded-lg p-4 border ${COLORS.BORDER}`}>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-300">최근 노트</h3>
-            {latestMemo && (
+        <ContentBox
+          title="최근 노트"
+          rightButton={
+            latestMemo ? (
               <span className="text-xs text-gray-500">
                 {new Date(latestMemo.created_at).toLocaleString('ko-KR', {
                   month: 'short',
@@ -571,8 +572,9 @@ export default function VoiceMemoPage() {
                   minute: '2-digit'
                 })}
               </span>
-            )}
-          </div>
+            ) : undefined
+          }
+        >
           <div className="text-sm leading-relaxed">
             {latestMemo ? (
               <span className="text-white">
@@ -586,7 +588,7 @@ export default function VoiceMemoPage() {
               </span>
             )}
           </div>
-        </div>
+        </ContentBox>
       </div>
 
       <BottomNavigation />

@@ -132,7 +132,7 @@ export default function MemoEditPage() {
 
       if (result.success) {
         console.log('노트 수정 성공');
-        router.push('/notes');
+        router.push(`/notes/${memo.id}`);
       } else {
         console.error('Failed to update memo:', result.message);
         alert('노트 저장에 실패했습니다.');
@@ -151,14 +151,14 @@ export default function MemoEditPage() {
     if (content !== originalContent) {
       setShowBackConfirm(true);
     } else {
-      router.push('/notes');
+      router.push(`/notes/${memoId}`);
     }
   };
 
   // 뒤로가기 확인
   const confirmBack = () => {
     setShowBackConfirm(false);
-    router.push('/notes');
+    router.push(`/notes/${memoId}`);
   };
 
   // 노트 삭제 확인

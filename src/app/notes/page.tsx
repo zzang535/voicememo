@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import MemoItem from '@/components/MemoItem';
+import NoteItem from '@/components/NoteItem';
 import { getUserId } from '@/utils/userUtils';
 import { COLORS } from '@/constants/colors';
 
@@ -11,6 +11,7 @@ interface MemoData {
   id: number;
   user_id: string;
   content: string;
+  emotions?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -113,7 +114,7 @@ export default function MemosPage() {
           ) : (
             <div className="space-y-3">
               {memos.map((memo) => (
-                <MemoItem key={memo.id} memo={memo} />
+                <NoteItem key={memo.id} memo={memo} />
               ))}
             </div>
           )}
