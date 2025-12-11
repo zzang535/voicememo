@@ -26,6 +26,7 @@ export default function VoiceMemoPage() {
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
   const [userId, setUserId] = useState<string>('');
   const [latestMemo, setLatestMemo] = useState<MemoData | null>(null);
+  const [isLoadingMemo, setIsLoadingMemo] = useState(true);
   const [dotCount, setDotCount] = useState(1);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -60,6 +61,7 @@ export default function VoiceMemoPage() {
 
   // 메모 목록 조회 함수
   const fetchMemos = async (userIdParam: string) => {
+    setIsLoadingMemo(true);
     try {
       const response = await fetch(`/api/memo?userId=${encodeURIComponent(userIdParam)}`);
       const result = await response.json();
@@ -74,6 +76,8 @@ export default function VoiceMemoPage() {
       }
     } catch (error) {
       console.error('Error fetching memos:', error);
+    } finally {
+      setIsLoadingMemo(false);
     }
   };
 
@@ -509,14 +513,21 @@ export default function VoiceMemoPage() {
           <p className="text-gray-400">목소리로 생각이나 순간을 기록하세요.</p>
 
           {/* User ID Display */}
-          {userId && (
-            <div className={`mt-6 inline-flex items-center gap-2 px-3 py-1 ${COLORS.BOX_BG} rounded-full`}>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-gray-300">
-                사용자 ID: {getDisplayUserId(userId)}
-              </span>
-            </div>
-          )}
+          <div className={`mt-6 inline-flex items-center gap-2 px-3 py-1 ${COLORS.BOX_BG} rounded-full min-w-[140px]`}>
+            {userId ? (
+              <>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-gray-300">
+                  사용자 ID: {getDisplayUserId(userId)}
+                </span>
+              </>
+            ) : (
+              <div className="animate-pulse flex items-center gap-2 w-full">
+                <div className={`w-2 h-2 ${COLORS.BOX_BG_HOVER} rounded-full`}></div>
+                <div className={`h-3 flex-1 ${COLORS.BOX_BG_HOVER} rounded`}></div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Recording Button */}
@@ -565,7 +576,7 @@ export default function VoiceMemoPage() {
         <ContentBox
           title="최근 노트"
           rightButton={
-            latestMemo ? (
+            latestMemo && !isLoadingMemo ? (
               <span className="text-xs text-gray-500">
                 {new Date(latestMemo.created_at).toLocaleString('ko-KR', {
                   month: 'short',
@@ -577,7 +588,13 @@ export default function VoiceMemoPage() {
             ) : undefined
           }
         >
-          {latestMemo ? (
+          {isLoadingMemo ? (
+            <div className="animate-pulse">
+              <div className={`h-3 ${COLORS.BOX_BG_HOVER} rounded w-full mb-2`}></div>
+              <div className={`h-3 ${COLORS.BOX_BG_HOVER} rounded w-full mb-2`}></div>
+              <div className={`h-3 ${COLORS.BOX_BG_HOVER} rounded w-3/4`}></div>
+            </div>
+          ) : latestMemo ? (
             <>
               <p className="text-white text-sm leading-relaxed mb-3 line-clamp-3">
                 {latestMemo.content}
