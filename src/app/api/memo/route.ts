@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/db';
 import { MemoData } from '@/types/memo';
 
+// Vercel 함수 타임아웃 설정 (재시도 로직을 고려하여 20초로 설정)
+export const maxDuration = 20;
+
 // GET: 사용자의 메모 목록 조회 또는 개별 메모 조회
 export async function GET(request: NextRequest) {
   try {
