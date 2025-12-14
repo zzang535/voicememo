@@ -15,6 +15,7 @@ COPY . .
 
 # Next.js는 빌드 시 환경변수가 필요할 수 있음 (선택적)
 # ENV NEXT_TELEMETRY_DISABLED=1
+# ..
 
 # Next.js standalone 모드로 빌드
 RUN npm run build
