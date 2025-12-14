@@ -48,3 +48,4 @@ next-env.d.ts
 # database backups
 sql/backups/
 *.sql.backup
+.env*.local
