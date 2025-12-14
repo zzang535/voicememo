@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  voicememo:
+    image: ghcr.io/${GITHUB_REPOSITORY}:latest
+    container_name: voicememo-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Node.js
+      NODE_ENV: production
+
+      # Google Cloud
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}
+      GOOGLE_APPLICATION_CREDENTIALS_JSON: ${GOOGLE_APPLICATION_CREDENTIALS_JSON}
+
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Database (호스트의 MySQL 사용)
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
