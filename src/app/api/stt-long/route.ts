@@ -3,28 +3,29 @@ import { SpeechClient, protos } from '@google-cloud/speech';
 
 export const runtime = 'nodejs';
 
-// Google Cloud Speech-to-Text 클라이언트 초기화
-let speechClient: SpeechClient;
+// Google Cloud Speech-to-Text 클라이언트 (lazy initialization)
+let speechClient: SpeechClient | null = null;
 
-try {
-  // 환경 변수에서 서비스 계정 JSON 파싱
-  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-  if (!credentialsJson) {
-    throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.');
+function getSpeechClient(): SpeechClient {
+  if (!speechClient) {
+    // 환경 변수에서 서비스 계정 JSON 파싱
+    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (!credentialsJson) {
+      throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const credentials = JSON.parse(credentialsJson);
+
+    speechClient = new SpeechClient({
+      projectId: credentials.project_id,
+      credentials: credentials,
+    });
+
+    console.log('✅ Google Speech 클라이언트 초기화 성공 (LongRunning)');
+    console.log('🔑 프로젝트 ID:', credentials.project_id);
   }
 
-  const credentials = JSON.parse(credentialsJson);
-
-  speechClient = new SpeechClient({
-    projectId: credentials.project_id,
-    credentials: credentials,
-  });
-
-  console.log('✅ Google Speech 클라이언트 초기화 성공 (LongRunning)');
-  console.log('🔑 프로젝트 ID:', credentials.project_id);
-} catch (error) {
-  console.error('❌ Google Speech 클라이언트 초기화 실패:', error);
-  throw error;
+  return speechClient;
 }
 
 export async function POST(req: NextRequest) {
@@ -122,7 +123,8 @@ async function processWithLongRunningRecognize(gcsUri: string, mimeType: string)
     console.log('📤 LongRunningRecognize API 요청 전송...');
 
     // LongRunningRecognize 호출 (비동기 작업 시작)
-    const [operation] = await speechClient.longRunningRecognize(request);
+    const client = getSpeechClient();
+    const [operation] = await client.longRunningRecognize(request);
 
     console.log('⏳ LongRunningRecognize 작업 진행 중...');
 

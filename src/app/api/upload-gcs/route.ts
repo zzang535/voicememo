@@ -4,29 +4,30 @@ import { GCS_CONFIG } from '@/config/recordingPolicy';
 
 export const runtime = 'nodejs';
 
-// Google Cloud Storage 클라이언트 초기화
-let storage: Storage;
+// Google Cloud Storage 클라이언트 (lazy initialization)
+let storage: Storage | null = null;
 
-try {
-  // 환경 변수에서 서비스 계정 JSON 파싱
-  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-  if (!credentialsJson) {
-    throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.');
+function getStorageClient(): Storage {
+  if (!storage) {
+    // 환경 변수에서 서비스 계정 JSON 파싱
+    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (!credentialsJson) {
+      throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const credentials = JSON.parse(credentialsJson);
+
+    storage = new Storage({
+      projectId: credentials.project_id,
+      credentials: credentials,
+    });
+
+    console.log('✅ Google Cloud Storage 클라이언트 초기화 성공');
+    console.log('📦 GCS 버킷:', GCS_CONFIG.BUCKET_NAME);
+    console.log('🔑 프로젝트 ID:', credentials.project_id);
   }
 
-  const credentials = JSON.parse(credentialsJson);
-
-  storage = new Storage({
-    projectId: credentials.project_id,
-    credentials: credentials,
-  });
-
-  console.log('✅ Google Cloud Storage 클라이언트 초기화 성공');
-  console.log('📦 GCS 버킷:', GCS_CONFIG.BUCKET_NAME);
-  console.log('🔑 프로젝트 ID:', credentials.project_id);
-} catch (error) {
-  console.error('❌ Google Cloud Storage 클라이언트 초기화 실패:', error);
-  throw error;
+  return storage;
 }
 
 export async function POST(req: NextRequest) {
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest) {
     console.log('📁 GCS 파일명:', fileName);
 
     // GCS에 업로드
-    const bucket = storage.bucket(GCS_CONFIG.BUCKET_NAME);
+    const storageClient = getStorageClient();
+    const bucket = storageClient.bucket(GCS_CONFIG.BUCKET_NAME);
     const gcsFile = bucket.file(fileName);
 
     await gcsFile.save(buffer, {
