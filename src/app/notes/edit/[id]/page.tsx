@@ -152,14 +152,14 @@ export default function MemoEditPage() {
     if (content !== originalContent) {
       setShowBackConfirm(true);
     } else {
-      router.push(`/notes/${memoId}`);
+      router.back();
     }
   };
 
   // 뒤로가기 확인
   const confirmBack = () => {
     setShowBackConfirm(false);
-    router.push(`/notes/${memoId}`);
+    router.back();
   };
 
   // 노트 삭제 확인
