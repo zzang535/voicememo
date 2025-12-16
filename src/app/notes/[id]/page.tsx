@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import ContentBox from '@/components/ContentBox';
 import { getUserId } from '@/utils/userUtils';
 import { COLORS } from '@/constants/colors';
-import { getEmotionStyle, getCoreNeedStyle } from '@/constants/automaticThoughts';
+import { getEmotionStyle } from '@/constants/automaticThoughts';
 
 interface MemoData {
   id: number;
@@ -115,6 +115,28 @@ export default function NoteDetailPage() {
           노트 #{memo.id} • {new Date(memo.created_at).toLocaleString('ko-KR')}
         </div>
 
+
+        {/* C. 원문 메모 (Full Content) */}
+        <ContentBox
+          title="노트"
+          rightButton={
+            <button
+              onClick={handleEdit}
+              className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded-lg transition-colors"
+              title="노트 수정"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          }
+        >
+          <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
+            {memo.content}
+          </p>
+        </ContentBox>
+
+
         {/* A. 요약 (Summary) */}
         {memo.summary && (
           <ContentBox>
@@ -152,63 +174,7 @@ export default function NoteDetailPage() {
           </ContentBox>
         )}
 
-        {/* C. 핵심 욕구 (Core Needs) */}
-        {memo.core_needs && memo.core_needs.length > 0 && (
-          <ContentBox title="핵심 욕구">
-            <div className="flex flex-wrap gap-2">
-              {memo.core_needs.map((need, index) => {
-                const style = getCoreNeedStyle(need);
-                return (
-                  <span
-                    key={index}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                    style={{
-                      color: style.color,
-                      backgroundColor: style.bgColor,
-                      borderColor: `${style.color}40`,
-                    }}
-                  >
-                    <span className="text-sm">{style.icon}</span>
-                    <span>{need}</span>
-                  </span>
-                );
-              })}
-            </div>
-          </ContentBox>
-        )}
 
-        {/* D. 떠오른 생각 (Thought) */}
-        {memo.thought && (
-          <ContentBox title="떠오른 생각">
-            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
-              <p className="text-gray-300 text-sm leading-relaxed italic">
-                "{memo.thought}"
-              </p>
-            </div>
-          </ContentBox>
-        )}
-
-        {/* E. 원문 메모 (Full Content) */}
-        <ContentBox
-          title="원문 메모"
-          rightButton={
-            <button
-              onClick={handleEdit}
-              className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded-lg transition-colors"
-              title="노트 수정"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-          }
-        >
-          <div className="bg-gray-800/30 rounded-lg">
-            <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
-              {memo.content}
-            </p>
-          </div>
-        </ContentBox>
       </div>
     </div>
   );
