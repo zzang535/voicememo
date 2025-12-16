@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MEMO_ANALYSIS_SYSTEM_PROMPT_V3 } from '@/constants/promptsV3';
+import { MEMO_ANALYSIS_SYSTEM_PROMPT_V4 } from '@/constants/promptsV4';
 
 export const runtime = 'nodejs';
 
@@ -25,10 +25,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          thought: '(테스트) 이것은 자동생각 분석 결과입니다.',
-          emotions: ['불안', '걱정', '스트레스'],
-          core_needs: ['안정감', '인정', '소속감'],
-          summary: '(테스트) 메모 내용의 요약입니다.'
+          summary: '(테스트) 메모 내용의 요약입니다.',
+          emotions: ['불안하다', '걱정된다'],
+          reasoning: '(테스트) 메모 내용에서 불안과 걱정이 느껴지는 표현들이 발견되었습니다.'
         },
         test_mode: true
       });
@@ -66,7 +65,7 @@ async function analyzeWithOpenAI(content: string, apiKey: string) {
       messages: [
         {
           role: 'system',
-          content: MEMO_ANALYSIS_SYSTEM_PROMPT_V3
+          content: MEMO_ANALYSIS_SYSTEM_PROMPT_V4
         },
         {
           role: 'user',
@@ -87,9 +86,8 @@ async function analyzeWithOpenAI(content: string, apiKey: string) {
   const result = JSON.parse(data.choices[0].message.content);
 
   return {
-    thought: result.thought || '',
+    summary: result.summary || '',
     emotions: result.emotions || [],
-    core_needs: result.core_needs || [],
-    summary: result.summary || ''
+    reasoning: result.reasoning || ''
   };
 }

@@ -65,7 +65,7 @@ export default function NoteDetailPage() {
   }, [userId, memoId, fetchMemo]);
 
   const handleBackClick = () => {
-    router.push('/notes');
+    router.back();
   };
 
   const handleEdit = () => {

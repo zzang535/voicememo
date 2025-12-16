@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, content, thought, emotions, core_needs, summary } = body;
+    const { userId, content, thought, emotions, core_needs, summary, reasoning } = body;
 
     if (!userId || !content) {
       return NextResponse.json({
@@ -86,14 +86,15 @@ export async function POST(request: NextRequest) {
     const coreNeedsJson = core_needs ? JSON.stringify(core_needs) : null;
 
     const result = await executeQuery(
-      'INSERT INTO memo (user_id, content, thought, emotions, core_needs, summary) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO memo (user_id, content, thought, emotions, core_needs, summary, reasoning) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
         userId,
         content.trim(),
         thought || null,
         emotionsJson,
         coreNeedsJson,
-        summary || null
+        summary || null,
+        reasoning || null
       ]
     ) as { insertId: number };
 
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
         emotions: emotions || null,
         core_needs: core_needs || null,
         summary: summary || null,
+        reasoning: reasoning || null,
         created_at: new Date().toISOString()
       }
     });
@@ -127,7 +129,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, userId, content, thought, emotions, core_needs, summary } = body;
+    const { id, userId, content, thought, emotions, core_needs, summary, reasoning } = body;
 
     if (!id || !userId || !content) {
       return NextResponse.json({
@@ -149,8 +151,8 @@ export async function PUT(request: NextRequest) {
 
     // 해당 사용자의 메모인지 확인 후 수정
     const result = await executeQuery(
-      'UPDATE memo SET content = ?, thought = ?, emotions = ?, core_needs = ?, summary = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-      [content.trim(), thought || null, emotionsJson, coreNeedsJson, summary || null, id, userId]
+      'UPDATE memo SET content = ?, thought = ?, emotions = ?, core_needs = ?, summary = ?, reasoning = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [content.trim(), thought || null, emotionsJson, coreNeedsJson, summary || null, reasoning || null, id, userId]
     ) as { affectedRows: number };
 
     if (result.affectedRows === 0) {

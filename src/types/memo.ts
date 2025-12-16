@@ -10,6 +10,7 @@ export interface MemoData {
   emotions?: string[] | null;  // 연관된 감정들 (배열)
   core_needs?: string[] | null;  // 핵심 욕구들 (배열)
   summary?: string | null;  // 메모 요약
+  reasoning?: string | null;  // 감정 추출 근거
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +25,7 @@ export interface CreateMemoRequest {
   emotions?: string[];
   core_needs?: string[];
   summary?: string;
+  reasoning?: string;
 }
 
 /**
@@ -37,4 +39,5 @@ export interface UpdateMemoRequest {
   emotions?: string[];
   core_needs?: string[];
   summary?: string;
+  reasoning?: string;
 }

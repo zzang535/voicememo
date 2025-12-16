@@ -124,7 +124,8 @@ export default function MemoEditPage() {
           thought: analysisResult?.thought,
           emotions: analysisResult?.emotions,
           core_needs: analysisResult?.core_needs,
-          summary: analysisResult?.summary
+          summary: analysisResult?.summary,
+          reasoning: analysisResult?.reasoning
         }),
       });
 

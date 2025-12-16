@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ContentBox from '@/components/ContentBox';
@@ -23,6 +24,7 @@ interface MemoData {
 type RecordingStatus = 'idle' | 'recording' | 'processing' | 'completed' | 'failed';
 
 export default function VoiceMemoPage() {
+  const router = useRouter();
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
   const [userId, setUserId] = useState<string>('');
   const [latestMemo, setLatestMemo] = useState<MemoData | null>(null);
@@ -89,6 +91,7 @@ export default function VoiceMemoPage() {
       emotions?: string[];
       core_needs?: string[];
       summary?: string;
+      reasoning?: string;
     }
   ) => {
     if (!userId || !content.trim()) return;
@@ -105,7 +108,8 @@ export default function VoiceMemoPage() {
           thought: analysis?.thought,
           emotions: analysis?.emotions,
           core_needs: analysis?.core_needs,
-          summary: analysis?.summary
+          summary: analysis?.summary,
+          reasoning: analysis?.reasoning
         }),
       });
 
@@ -595,7 +599,10 @@ export default function VoiceMemoPage() {
               <div className={`h-3 ${COLORS.BOX_BG_HOVER} rounded w-3/4`}></div>
             </div>
           ) : latestMemo ? (
-            <>
+            <div
+              onClick={() => router.push(`/notes/${latestMemo.id}`)}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <p className="text-white text-sm leading-relaxed mb-3 line-clamp-3">
                 {latestMemo.content}
               </p>
@@ -621,7 +628,7 @@ export default function VoiceMemoPage() {
                   })}
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <span className="text-gray-500 italic text-sm">
               작성된 노트가 없습니다
