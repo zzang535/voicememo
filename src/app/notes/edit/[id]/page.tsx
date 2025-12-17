@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/AlertModal';
@@ -19,6 +19,7 @@ interface MemoData {
 export default function MemoEditPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [memo, setMemo] = useState<MemoData | null>(null);
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
@@ -30,6 +31,7 @@ export default function MemoEditPage() {
   const [showBackConfirm, setShowBackConfirm] = useState(false);
 
   const memoId = params.id as string;
+  const from = searchParams.get('from') || 'list'; // 기본값은 list
 
   // 사용자 ID 초기화
   useEffect(() => {
@@ -133,7 +135,8 @@ export default function MemoEditPage() {
 
       if (result.success) {
         console.log('노트 수정 성공');
-        router.push(`/notes/${memo.id}`);
+        // 노트 상세로 이동 (from parameter 유지)
+        router.push(`/notes/${memo.id}?from=${from}`);
       } else {
         console.error('Failed to update memo:', result.message);
         alert('노트 저장에 실패했습니다.');
@@ -152,14 +155,16 @@ export default function MemoEditPage() {
     if (content !== originalContent) {
       setShowBackConfirm(true);
     } else {
-      router.back();
+      // 노트 상세로 돌아가기 (from parameter 전달)
+      router.push(`/notes/${memoId}?from=${from}`);
     }
   };
 
   // 뒤로가기 확인
   const confirmBack = () => {
     setShowBackConfirm(false);
-    router.back();
+    // 노트 상세로 돌아가기 (from parameter 전달)
+    router.push(`/notes/${memoId}?from=${from}`);
   };
 
   // 노트 삭제 확인

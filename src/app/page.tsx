@@ -600,7 +600,7 @@ export default function VoiceMemoPage() {
             </div>
           ) : latestMemo ? (
             <div
-              onClick={() => router.push(`/notes/${latestMemo.id}`)}
+              onClick={() => router.push(`/notes/${latestMemo.id}?from=home`)}
               className="cursor-pointer hover:opacity-80 transition-opacity"
             >
               <p className="text-white text-sm leading-relaxed mb-3 line-clamp-3">

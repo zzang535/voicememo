@@ -25,7 +25,7 @@ export default function MemoItem({ memo }: MemoItemProps) {
   };
 
   const handleClick = () => {
-    router.push(`/notes/${memo.id}`);
+    router.push(`/notes/${memo.id}?from=list`);
   };
 
   return (

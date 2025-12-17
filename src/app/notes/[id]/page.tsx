@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import ContentBox from '@/components/ContentBox';
 import { getUserId } from '@/utils/userUtils';
@@ -23,11 +23,13 @@ interface MemoData {
 export default function NoteDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [memo, setMemo] = useState<MemoData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
 
   const memoId = params.id as string;
+  const from = searchParams.get('from') || 'list'; // 기본값은 list
 
   // 사용자 ID 초기화
   useEffect(() => {
@@ -65,11 +67,17 @@ export default function NoteDetailPage() {
   }, [userId, memoId, fetchMemo]);
 
   const handleBackClick = () => {
-    router.back();
+    // from parameter에 따라 다른 경로로 이동
+    if (from === 'home') {
+      router.push('/');
+    } else {
+      router.push('/notes');
+    }
   };
 
   const handleEdit = () => {
-    router.push(`/notes/edit/${memoId}`);
+    // from parameter를 전달
+    router.push(`/notes/edit/${memoId}?from=${from}`);
   };
 
   if (isLoading) {
