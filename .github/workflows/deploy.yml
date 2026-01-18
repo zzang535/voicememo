@@ -68,12 +68,13 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          MAINTENANCE_MODE: ${{ secrets.MAINTENANCE_MODE }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: GITHUB_REPOSITORY,GOOGLE_CLOUD_PROJECT_ID,GOOGLE_API_KEY,GCS_BUCKET_NAME,GOOGLE_APPLICATION_CREDENTIALS_JSON,OPENAI_API_KEY,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_DATABASE
+          envs: GITHUB_REPOSITORY,GOOGLE_CLOUD_PROJECT_ID,GOOGLE_API_KEY,GCS_BUCKET_NAME,GOOGLE_APPLICATION_CREDENTIALS_JSON,OPENAI_API_KEY,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_DATABASE,MAINTENANCE_MODE
           script: |
             # GHCR 로그인
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -98,6 +99,7 @@ jobs:
             DB_USERNAME=${DB_USERNAME}
             DB_PASSWORD=${DB_PASSWORD}
             DB_DATABASE=${DB_DATABASE}
+            MAINTENANCE_MODE=${MAINTENANCE_MODE}
             EOF
 
             # 새 컨테이너 시작
