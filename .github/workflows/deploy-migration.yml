@@ -14,7 +14,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,22 +47,20 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/arm64  # Raspberry Pi용 arm64 아키텍처
+          platforms: linux/arm64  # ARM64 아키텍처 (Mac Mini)
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy to Server 2 via Bastion
-        uses: appleboy/ssh-action@v1.0.3
+  deploy:
+    needs: build
+    runs-on: self-hosted  # 서버 2 (Mac Mini)에서 직접 실행
+
+    steps:
+      - name: Deploy to Server 2
         env:
-          TARGET_HOST: ${{ secrets.SSH_TARGET_HOST }}
-          TARGET_USER: ${{ secrets.SSH_TARGET_USER }}
-          TARGET_PORT: ${{ secrets.SSH_TARGET_PORT }}
-          TARGET_KEY: ${{ secrets.SSH_TARGET_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GOOGLE_CLOUD_PROJECT_ID: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -75,68 +73,46 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
           MAINTENANCE_MODE: ${{ secrets.MAINTENANCE_MODE }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: TARGET_HOST,TARGET_USER,TARGET_PORT,TARGET_KEY,GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_REPOSITORY,GOOGLE_CLOUD_PROJECT_ID,GOOGLE_API_KEY,GCS_BUCKET_NAME,GOOGLE_APPLICATION_CREDENTIALS_JSON,OPENAI_API_KEY,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_DATABASE,MAINTENANCE_MODE
-          script: |
-            # 타겟 서버 SSH 키를 임시 파일로 저장
-            echo "$TARGET_KEY" > /tmp/target_key
-            chmod 600 /tmp/target_key
+        run: |
+          # GHCR 로그인
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 타겟 서버에 SSH로 배포 명령 실행
-            ssh -i /tmp/target_key \
-                -o StrictHostKeyChecking=no \
-                -o UserKnownHostsFile=/dev/null \
-                -p ${TARGET_PORT} \
-                ${TARGET_USER}@${TARGET_HOST} bash <<ENDSSH
-              # GHCR 로그인
-              echo ${GITHUB_TOKEN} | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+          # 기존 컨테이너 중지 및 제거
+          docker stop voicememo-app || true
+          docker rm voicememo-app || true
 
-              # 기존 컨테이너 중지 및 제거
-              docker stop voicememo-app || true
-              docker rm voicememo-app || true
+          # 새 이미지 pull
+          docker pull ghcr.io/${GITHUB_REPOSITORY}:latest
 
-              # 새 이미지 pull
-              docker pull ghcr.io/${GITHUB_REPOSITORY}:latest
+          # 환경변수 파일 생성
+          cat > /tmp/voicememo.env <<EOF
+          GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+          GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID}
+          GOOGLE_API_KEY=${GOOGLE_API_KEY}
+          GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_APPLICATION_CREDENTIALS_JSON}
+          OPENAI_API_KEY=${OPENAI_API_KEY}
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USERNAME=${DB_USERNAME}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_DATABASE=${DB_DATABASE}
+          MAINTENANCE_MODE=${MAINTENANCE_MODE}
+          EOF
 
-              # 환경변수 파일 생성
-              cat > /tmp/voicememo.env <<'ENVFILE'
-              GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
-              GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID}
-              GOOGLE_API_KEY=${GOOGLE_API_KEY}
-              GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
-              GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_APPLICATION_CREDENTIALS_JSON}
-              OPENAI_API_KEY=${OPENAI_API_KEY}
-              DB_HOST=${DB_HOST}
-              DB_PORT=${DB_PORT}
-              DB_USERNAME=${DB_USERNAME}
-              DB_PASSWORD=${DB_PASSWORD}
-              DB_DATABASE=${DB_DATABASE}
-              MAINTENANCE_MODE=${MAINTENANCE_MODE}
-              ENVFILE
+          # 새 컨테이너 시작
+          docker run -d \
+            --name voicememo-app \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            --env-file /tmp/voicememo.env \
+            --add-host=host.docker.internal:host-gateway \
+            ghcr.io/${GITHUB_REPOSITORY}:latest
 
-              # 새 컨테이너 시작
-              docker run -d \
-                --name voicememo-app \
-                --restart unless-stopped \
-                -p 3000:3000 \
-                --env-file /tmp/voicememo.env \
-                --add-host=host.docker.internal:host-gateway \
-                ghcr.io/${GITHUB_REPOSITORY}:latest
+          # 환경변수 파일 삭제 (보안)
+          rm /tmp/voicememo.env
 
-              # 환경변수 파일 삭제 (보안)
-              rm /tmp/voicememo.env
+          # 이미지 정리
+          docker image prune -f
 
-              # 이미지 정리
-              docker image prune -f
-
-              echo "타겟 서버 배포 완료!"
-            ENDSSH
-
-            # 베스천 서버의 임시 키 파일 삭제
-            rm /tmp/target_key
-
-            echo "베스천을 통한 배포 완료!"
+          echo "배포 완료!"
