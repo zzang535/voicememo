@@ -74,6 +74,10 @@ jobs:
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
           MAINTENANCE_MODE: ${{ secrets.MAINTENANCE_MODE }}
         run: |
+          # Docker credential helper 비활성화 (macOS Keychain 문제 해결)
+          mkdir -p ~/.docker
+          echo '{"credsStore":""}' > ~/.docker/config.json
+
           # GHCR 로그인
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
