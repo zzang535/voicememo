@@ -26,7 +26,7 @@ export default function MaintenancePage() {
           <div className="space-y-2 text-gray-400">
             <p className="flex items-center justify-center gap-2">
               <span className="text-xl">📅</span>
-              <span>일시: 2026년 1월 18일</span>
+              <span>일시: 2026년 1월 24일</span>
             </p>
             <p className="flex items-center justify-center gap-2">
               <span className="text-xl">⏰</span>
