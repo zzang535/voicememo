@@ -9,37 +9,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   build-and-deploy:
     runs-on: self-hosted  # 서버 2 (Mac Mini)에서 모든 작업 실행
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
       - name: Build Docker image
-        run: |
-          docker build -t ghcr.io/${{ github.repository }}:latest .
-          docker tag ghcr.io/${{ github.repository }}:latest ghcr.io/${{ github.repository }}:main-${{ github.sha }}
-
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/${{ github.repository }}:latest
-          docker push ghcr.io/${{ github.repository }}:main-${{ github.sha }}
+        run: docker build -t voicememo-app:latest .
 
       - name: Deploy to Server 2
         env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
           GOOGLE_CLOUD_PROJECT_ID: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
@@ -52,19 +34,12 @@ jobs:
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
           MAINTENANCE_MODE: ${{ secrets.MAINTENANCE_MODE }}
         run: |
-          # GHCR 로그인
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
           # 기존 컨테이너 중지 및 제거
           docker stop voicememo-app || true
           docker rm voicememo-app || true
 
-          # 새 이미지 pull
-          docker pull ghcr.io/${GITHUB_REPOSITORY}:latest
-
           # 환경변수 파일 생성
           cat > /tmp/voicememo.env <<EOF
-          GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
           GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID}
           GOOGLE_API_KEY=${GOOGLE_API_KEY}
           GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
@@ -78,14 +53,14 @@ jobs:
           MAINTENANCE_MODE=${MAINTENANCE_MODE}
           EOF
 
-          # 새 컨테이너 시작
+          # 새 컨테이너 시작 (로컬 이미지 사용)
           docker run -d \
             --name voicememo-app \
             --restart unless-stopped \
             -p 3000:3000 \
             --env-file /tmp/voicememo.env \
             --add-host=host.docker.internal:host-gateway \
-            ghcr.io/${GITHUB_REPOSITORY}:latest
+            voicememo-app:latest
 
           # 환경변수 파일 삭제 (보안)
           rm /tmp/voicememo.env
