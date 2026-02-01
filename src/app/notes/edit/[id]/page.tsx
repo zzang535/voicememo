@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
+import TimeDisplay from '@/components/TimeDisplay';
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/AlertModal';
 import { getUserId } from '@/utils/userUtils';
@@ -240,9 +241,7 @@ export default function MemoEditPage() {
       <div className="flex-1 flex flex-col pt-20 px-4 pb-4 max-w-4xl mx-auto w-full overflow-hidden">
         {/* 노트 정보 */}
         <div className="flex justify-between items-center flex-shrink-0 mb-4 text-sm text-gray-400">
-          <div>
-            노트 #{memo.id} - {new Date(memo.created_at).toLocaleString('ko-KR')}
-          </div>
+          <TimeDisplay dateString={memo.created_at} />
           <div className="text-xs text-gray-500">
             글자 수: {content.length}자
           </div>
