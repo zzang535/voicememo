@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import ContentBox from '@/components/ContentBox';
+import TimeDisplay from '@/components/TimeDisplay';
 import { getUserId } from '@/utils/userUtils';
 import { COLORS } from '@/constants/colors';
 import { getEmotionStyle } from '@/constants/automaticThoughts';
@@ -120,7 +121,7 @@ export default function NoteDetailPage() {
       <div className="pt-20 px-4 max-w-4xl mx-auto space-y-6">
         {/* 노트 정보 */}
         <div className="text-sm text-gray-400 text-center">
-          노트 #{memo.id} • {new Date(memo.created_at).toLocaleString('ko-KR')}
+          <TimeDisplay dateString={memo.created_at} />
         </div>
 
 

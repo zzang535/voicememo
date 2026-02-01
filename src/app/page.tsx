@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ContentBox from '@/components/ContentBox';
+import TimeDisplay from '@/components/TimeDisplay';
 import { getUserId } from '@/utils/userUtils';
 import { getDisplayUserId } from '@/policies/userIdDisplayPolicy';
 import { RECORDING_POLICY } from '@/config/recordingPolicy';
@@ -581,14 +582,7 @@ export default function VoiceMemoPage() {
           title="최근 노트"
           rightButton={
             latestMemo && !isLoadingMemo ? (
-              <span className="text-xs text-gray-500">
-                {new Date(latestMemo.created_at).toLocaleString('ko-KR', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </span>
+              <TimeDisplay dateString={latestMemo.created_at} className="text-xs text-gray-500" />
             ) : undefined
           }
         >
