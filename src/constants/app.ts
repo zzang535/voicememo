@@ -1,7 +1,7 @@
 // 앱 관련 상수
 
 export const APP_NAME = {
-  KO: '세이노',
+  KO: '세이노트',
   EN: 'Saynote',
   FULL: '세이노트 (Saynote)'
 } as const;
