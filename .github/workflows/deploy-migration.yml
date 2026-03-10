@@ -11,61 +11,42 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted  # 맥미니에서 빌드 & 배포 (네이티브 ARM64)
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t voicememo-app:latest .
-
-      - name: Deploy to Server 2
-        env:
-          GOOGLE_CLOUD_PROJECT_ID: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_DATABASE: ${{ secrets.DB_DATABASE }}
-          MAINTENANCE_MODE: ${{ secrets.MAINTENANCE_MODE }}
+      - name: Install dependencies
         run: |
-          # 기존 컨테이너 중지 및 제거
-          docker stop voicememo-app || true
-          docker rm voicememo-app || true
+          echo "📦 Installing dependencies..."
+          npm ci
 
-          # 환경변수 파일 생성
-          cat > /tmp/voicememo.env <<EOF
-          GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID}
-          GOOGLE_API_KEY=${GOOGLE_API_KEY}
-          GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
-          GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_APPLICATION_CREDENTIALS_JSON}
-          OPENAI_API_KEY=${OPENAI_API_KEY}
-          DB_HOST=${DB_HOST}
-          DB_PORT=${DB_PORT}
-          DB_USERNAME=${DB_USERNAME}
-          DB_PASSWORD=${DB_PASSWORD}
-          DB_DATABASE=${DB_DATABASE}
-          MAINTENANCE_MODE=${MAINTENANCE_MODE}
-          EOF
+      - name: Build
+        run: |
+          echo "🔨 Building Next.js app..."
+          npm run build
 
-          # 새 컨테이너 시작 (로컬 이미지 사용)
-          docker run -d \
-            --name voicememo-app \
-            --restart unless-stopped \
-            -p 3000:3000 \
-            --env-file /tmp/voicememo.env \
-            --add-host=host.docker.internal:host-gateway \
-            voicememo-app:latest
+      - name: Copy static assets to standalone
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
 
-          # 환경변수 파일 삭제 (보안)
-          rm /tmp/voicememo.env
+      - name: Reload PM2
+        run: |
+          echo "⚡ Reloading PM2..."
+          pm2 reload voicememo --update-env
+          pm2 save
 
-          # 이미지 정리
-          docker image prune -f
-
-          echo "배포 완료!"
+      - name: Health check
+        run: |
+          echo "⏳ Waiting for service..."
+          sleep 5
+          if pm2 list | grep -q "voicememo.*online"; then
+            echo "✅ Deployment successful!"
+            pm2 logs voicememo --lines 5 --nostream
+          else
+            echo "❌ Deployment failed!"
+            pm2 logs voicememo --lines 20 --nostream
+            exit 1
+          fi
